@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NLP — Session 01: Foundations</title>
+
+<!-- Google Fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+
+<!-- Reveal.js -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css"/>
+<!-- Reveal highlight plugin CSS -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css"/>
+
+<style>
+/* ── Palette ──────────────────────────────────────────────────────── */
+:root {
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --border:    #30363d;
+  --mint:      #56c8ba;
+  --mint-dim:  #1e4a45;
+  --navy:      #4a6fc8;
+  --navy-dim:  #1a2740;
+  --gold:      #e8c47a;
+  --gold-dim:  #3d2e0f;
+  --text:      #e6edf3;
+  --text-dim:  #8b949e;
+  --red:       #f47067;
+  --red-dim:   #3d1212;
+  --green:     #7ee787;
+  --green-dim: #122d1a;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+.reveal-viewport { background: var(--bg); }
+.reveal {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 34px;
+  color: var(--text);
+}
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: 'DM Serif Display', serif;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 0.4em;
+}
+.reveal h1 { font-size: 1.9em; line-height: 1.1; }
+.reveal h2 { font-size: 1.25em; color: var(--mint); }
+.reveal h3 { font-size: 0.95em; color: var(--gold); font-style: italic; }
+.reveal p  { font-weight: 300; line-height: 1.5; margin: 0.3em 0; }
+.reveal li { font-weight: 300; line-height: 1.5; margin: 0.2em 0; }
+.reveal strong { font-weight: 500; color: var(--mint); }
+.reveal em     { color: var(--gold); font-style: italic; }
+.reveal code {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.76em;
+  background: var(--surface);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  color: var(--mint);
+}
+.reveal pre {
+  margin: 0.5em auto;
+  box-shadow: none;
+  width: 100%;
+}
+.reveal pre code {
+  font-size: 0.68em;
+  border-radius: 8px;
+  padding: 0.9em 1.1em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  max-height: 380px;
+  overflow: auto;
+}
+.reveal ul { list-style: none; padding: 0; margin: 0.3em 0; }
+.reveal ul li::before { content: "›"; color: var(--mint); margin-right: 0.4em; font-weight: 500; }
+.reveal ul ul li::before { content: "·"; color: var(--text-dim); }
+.reveal a { color: var(--mint); text-decoration: none; border-bottom: 1px solid var(--mint-dim); }
+.reveal .slide-number { color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.5em; }
+.reveal .progress { color: var(--mint); height: 3px; }
+
+/* ── Section divider slides ───────────────────────────────────────── */
+.section-slide { background: var(--navy-dim) !important; }
+.section-slide h2 { font-size: 1.9em; color: var(--text); }
+.section-num {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.45em;
+  color: var(--mint);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 0.6em;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────── */
+.cols { display: grid; gap: 1.2em; }
+.cols-2    { grid-template-columns: 1fr 1fr; }
+.cols-3    { grid-template-columns: 1fr 1fr 1fr; }
+.cols-6040 { grid-template-columns: 60fr 40fr; }
+.cols-4060 { grid-template-columns: 40fr 60fr; }
+
+/* ── Cards ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65em 0.9em;
+  font-size: 0.76em;
+}
+.card-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mint);
+  margin-bottom: 0.4em;
+}
+.card.gold  { border-color: var(--gold); }
+.card.gold  .card-title { color: var(--gold); }
+.card.navy  { border-color: var(--navy); }
+.card.navy  .card-title { color: #7b9de8; }
+.card.red   { border-color: var(--red);  }
+.card.red   .card-title { color: var(--red); }
+.card.green { border-color: var(--green);}
+.card.green .card-title { color: var(--green); }
+
+/* ── Highlight boxes ──────────────────────────────────────────────── */
+.hbox {
+  border-left: 3px solid var(--mint);
+  background: var(--mint-dim);
+  border-radius: 0 8px 8px 0;
+  padding: 0.55em 0.9em;
+  font-size: 0.76em;
+  margin: 0.4em 0;
+}
+.hbox.gold  { border-color: var(--gold);  background: var(--gold-dim); }
+.hbox.red   { border-color: var(--red);   background: var(--red-dim);  }
+.hbox.navy  { border-color: var(--navy);  background: var(--navy-dim); }
+
+/* ── Formulas ─────────────────────────────────────────────────────── */
+.formula {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.76em;
+  color: var(--gold);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  padding: 0.45em 0.9em;
+  margin: 0.4em 0;
+}
+
+/* ── Step rows ────────────────────────────────────────────────────── */
+.step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin: 0.35em 0;
+  font-size: 0.78em;
+}
+.step-num {
+  min-width: 1.5em;
+  height: 1.5em;
+  background: var(--mint-dim);
+  border: 1px solid var(--mint);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72em;
+  color: var(--mint);
+  flex-shrink: 0;
+  margin-top: 0.1em;
+}
+
+/* ── Token stream ─────────────────────────────────────────────────── */
+.token-stream {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.28em;
+  justify-content: center;
+  margin: 0.5em 0;
+}
+.tok {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.58em;
+  padding: 0.25em 0.5em;
+  border-radius: 5px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+}
+.tok.a { border-color: var(--mint);  color: var(--mint);  background: var(--mint-dim);  }
+.tok.b { border-color: var(--gold);  color: var(--gold);  background: var(--gold-dim);  }
+.tok.c { border-color: var(--navy);  color: #7b9de8;      background: var(--navy-dim);  }
+
+/* ── Confusion matrix ─────────────────────────────────────────────── */
+.cm-table { border-collapse: collapse; font-size: 0.68em; font-family: 'DM Mono', monospace; margin: 0 auto; }
+.cm-table td, .cm-table th { border: 1px solid var(--border); padding: 0.5em 0.9em; text-align: center; }
+.cm-table th { background: var(--surface); color: var(--text-dim); font-weight: 400; }
+.cm-table .tp { background: var(--green-dim); color: var(--green); }
+.cm-table .tn { background: var(--green-dim); color: var(--green); }
+.cm-table .fp { background: var(--red-dim);   color: var(--red);   }
+.cm-table .fn { background: var(--red-dim);   color: var(--red);   }
+
+/* ── Pills ────────────────────────────────────────────────────────── */
+.pill {
+  display: inline-block;
+  padding: 0.18em 0.65em;
+  border-radius: 999px;
+  font-size: 0.6em;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 0.05em;
+  margin: 0.12em;
+}
+.pill-mint  { background: var(--mint-dim);  color: var(--mint);  border: 1px solid var(--mint); }
+.pill-gold  { background: var(--gold-dim);  color: var(--gold);  border: 1px solid var(--gold); }
+.pill-navy  { background: var(--navy-dim);  color: #7b9de8;      border: 1px solid var(--navy); }
+
+/* ── Arrow flow ───────────────────────────────────────────────────── */
+.flow {
+  display: flex;
+  align-items: center;
+  gap: 0.4em;
+  flex-wrap: wrap;
+  font-size: 0.68em;
+  font-family: 'DM Mono', monospace;
+  margin: 0.4em 0;
+}
+.flow .node {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.3em 0.7em;
+  color: var(--text);
+}
+.flow .node.active { border-color: var(--mint); color: var(--mint); background: var(--mint-dim); }
+.flow .arr { color: var(--text-dim); }
+
+/* ── Title slide ──────────────────────────────────────────────────── */
+.title-meta {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.36em;
+  color: var(--text-dim);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  margin-bottom: 0.9em;
+}
+.title-tag {
+  display: inline-block;
+  border: 1px solid var(--mint-dim);
+  color: var(--mint);
+  padding: 0.18em 0.7em;
+  border-radius: 4px;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.36em;
+  letter-spacing: 0.08em;
+  margin: 0.2em;
+}
+
+/* ── Big quote ────────────────────────────────────────────────────── */
+.big-quote {
+  font-family: 'DM Serif Display', serif;
+  font-style: italic;
+  font-size: 1.2em;
+  color: var(--gold);
+  line-height: 1.35;
+  padding: 0.5em 0;
+}
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════ TITLE -->
+<section>
+  <div class="title-meta">Natural Language Processing · Session 01 / 08</div>
+  <h1>Foundations of NLP</h1>
+  <h3 style="margin-top:0.2em;">Normalisation · Tokenisation · Evaluation · Baselines</h3>
+  <p style="color:var(--text-dim); font-size:0.55em; margin-top:1.2em;">
+    Oscar de Felice &nbsp;·&nbsp; Head of AI, WhiteLab Genomics
+  </p>
+  <div style="margin-top:1em;">
+    <span class="title-tag">NLP intro</span>
+    <span class="title-tag">normalisation</span>
+    <span class="title-tag">tokenisation</span>
+    <span class="title-tag">BPE</span>
+    <span class="title-tag">data hygiene</span>
+    <span class="title-tag">F1</span>
+    <span class="title-tag">baselines</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ AGENDA -->
+<section>
+  <h2>Today — ~60 min theory</h2>
+  <div class="cols cols-2" style="font-size:0.76em; margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">00 · What is NLP?</div>
+        The field, its scope, and why it is hard.
+      </div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">01 · NLP task taxonomy</div>
+        Classification, generation, extraction — how problems are framed.
+      </div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">02 · Text normalisation</div>
+        Turning raw text into something a model can consume.
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">03 · Tokenisation</div>
+        Whitespace → rule-based → subword (BPE).
+      </div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">04 · Dataset hygiene</div>
+        Splits, stratification, leakage.
+      </div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">05 · Evaluation &amp; baselines</div>
+        Accuracy, F1, and the floor every model must beat.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 0 -->
+<section class="section-slide">
+  <span class="section-num">00</span>
+  <h2>What is NLP?</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">
+    The field that sits at the intersection of linguistics, statistics, and computation.
+  </p>
+</section>
+
+<section>
+  <h2>Language is the hardest human product to model</h2>
+  <div class="cols cols-2" style="font-size:0.78em;">
+    <div>
+      <p>Computers handle numbers natively.<br/>
+      Language is ambiguous by design.</p>
+      <div class="hbox gold" style="margin:0.6em 0;">
+        <strong>"I saw the man with the telescope."</strong><br/>
+        <span style="color:var(--text-dim); font-size:0.9em;">
+          Did I use the telescope to see him?<br/>
+          Or did he have the telescope?
+        </span>
+      </div>
+      <div class="hbox" style="margin:0.4em 0;">
+        <strong>"The bank was steep."</strong><br/>
+        <span style="color:var(--text-dim); font-size:0.9em;">
+          River bank or financial institution?<br/>
+          Context resolves it. Models must learn context.
+        </span>
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Ambiguity is everywhere</div>
+        Lexical · Syntactic · Semantic · Pragmatic<br/>
+        <span style="color:var(--text-dim);">Every level of language has multiple valid interpretations.</span>
+      </div>
+      <div class="card gold">
+        <div class="card-title">Meaning depends on context</div>
+        Same word, different meanings.<br/>
+        Same sentence, different intentions.<br/>
+        <span style="color:var(--text-dim);">A model that ignores context will fail.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>A (brief) history of NLP</h2>
+  <div style="font-size:0.75em;">
+    <div class="cols cols-3" style="margin-bottom:0.6em;">
+      <div class="card">
+        <div class="card-title">1950s–1980s — Symbolic</div>
+        Hand-crafted rules, grammars, expert systems.<br/>
+        <span style="color:var(--text-dim);">Brittle. Did not scale to real language.</span>
+      </div>
+      <div class="card gold">
+        <div class="card-title">1990s–2010s — Statistical</div>
+        N-gram models, SVMs, logistic regression.<br/>
+        Learn from data. Language as probability.<br/>
+        <span style="color:var(--text-dim);">Sessions 2–4 of this course.</span>
+      </div>
+      <div class="card navy">
+        <div class="card-title">2013–now — Neural</div>
+        Word2Vec (2013) → LSTM (2015) → Transformer (2017) → BERT/GPT (2018–).<br/>
+        <span style="color:var(--text-dim);">Sessions 5–8 of this course.</span>
+      </div>
+    </div>
+    <div class="hbox" style="font-size:0.88em;">
+      <strong>The shift:</strong> from hand-crafted rules → learned representations.
+      The same data-driven principle runs through every technique in this course.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>NLP is everywhere</h2>
+  <div class="cols cols-3" style="font-size:0.74em; margin-bottom:0.6em;">
+    <div class="card">
+      <div class="card-title">Search &amp; Retrieval</div>
+      Google, Bing, semantic search, RAG systems.
+      <br/><span style="color:var(--text-dim);">Query → relevant documents.</span>
+    </div>
+    <div class="card gold">
+      <div class="card-title">Generation</div>
+      ChatGPT, Copilot, translation, summarisation.
+      <br/><span style="color:var(--text-dim);">Text → text.</span>
+    </div>
+    <div class="card navy">
+      <div class="card-title">Classification</div>
+      Spam detection, sentiment, content moderation.
+      <br/><span style="color:var(--text-dim);">Text → label.</span>
+    </div>
+    <div class="card">
+      <div class="card-title">Information Extraction</div>
+      NER, relation extraction, clinical coding.
+      <br/><span style="color:var(--text-dim);">Text → structured record.</span>
+    </div>
+    <div class="card gold">
+      <div class="card-title">Speech</div>
+      ASR (Whisper), TTS, voice assistants.
+      <br/><span style="color:var(--text-dim);">Audio ↔ text.</span>
+    </div>
+    <div class="card navy">
+      <div class="card-title">Science</div>
+      Genomics, drug discovery, literature mining.
+      <br/><span style="color:var(--text-dim);">Sequences as language.</span>
+    </div>
+  </div>
+  <div class="hbox" style="font-size:0.72em;">
+    The last one is where I work. Protein sequences are strings of tokens from a 20-letter alphabet.
+    The same models you will build here are used to design drugs.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 1 -->
+<section class="section-slide">
+  <span class="section-num">01</span>
+  <h2>NLP Task Taxonomy</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">The output type defines the task.</p>
+</section>
+
+<section>
+  <h2>The input is always text. The output defines the task.</h2>
+  <div class="cols cols-2" style="margin-top:0.4em;">
+    <div class="card" style="font-size:0.73em;">
+      <div class="card-title">Classification — Text → label</div>
+      Sentiment, topic detection, intent, spam.<br/>
+      <em>One label per document.</em><br/><br/>
+      Input: "This film was absolutely terrible."<br/>
+      Output: <code>negative</code>
+    </div>
+    <div class="card gold" style="font-size:0.73em;">
+      <div class="card-title">Token classification — Text → label per token</div>
+      Named entity recognition, POS tagging.<br/>
+      <em>One label per word.</em><br/><br/>
+      Input: "Apple is based in Cupertino."<br/>
+      Output: <code>[ORG] [O] [O] [O] [LOC]</code>
+    </div>
+    <div class="card navy" style="font-size:0.73em;">
+      <div class="card-title">Generation — Text → text</div>
+      Translation, summarisation, dialogue, completion.<br/>
+      <em>A new sequence as output.</em><br/><br/>
+      Input: "Bonjour le monde."<br/>
+      Output: "Hello world."
+    </div>
+    <div class="card" style="font-size:0.73em;">
+      <div class="card-title">Extraction / QA — Text + query → span</div>
+      Reading comprehension, information extraction.<br/>
+      <em>A substring or structured record.</em><br/><br/>
+      Q: "Where is Apple based?"<br/>
+      A: "Cupertino" (span from text)
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>This course: classification as the spine</h2>
+  <div class="hbox" style="font-size:0.76em; margin-bottom:0.7em;">
+    We use the <strong>same benchmark dataset</strong> from Session 01 through Session 05.
+    Every new method gets added as a row in the same comparison table.
+    Comparison is the point.
+  </div>
+  <div class="cols cols-3" style="font-size:0.72em;">
+    <div class="card">
+      <div class="card-title">Sessions 1–4</div>
+      Classical pipeline<br/>
+      Majority → Naive Bayes<br/>→ Logistic Regression → Embeddings
+    </div>
+    <div class="card gold">
+      <div class="card-title">Session 5</div>
+      Neural sequence model<br/>
+      LSTM classifier
+    </div>
+    <div class="card navy">
+      <div class="card-title">Sessions 6–8</div>
+      Transformers<br/>
+      Architecture → BERT fine-tuning → NER + generation
+    </div>
+  </div>
+  <p style="font-size:0.62em; color:var(--text-dim); margin-top:0.6em;">
+    Generation and token classification appear in Sessions 7–8 once you have the foundations.
+  </p>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 2 -->
+<section class="section-slide">
+  <span class="section-num">02</span>
+  <h2>Text Normalisation</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Before any model sees your text, it must be cleaned.</p>
+</section>
+
+<section>
+  <h2>Why normalise?</h2>
+  <div class="cols cols-6040" style="font-size:0.78em;">
+    <div>
+      <p>Without normalisation, vocabulary explodes unnecessarily.</p>
+      <div class="hbox red" style="margin:0.5em 0;">
+        <strong>Problem:</strong><br/>
+        <code>"Dog"</code>, <code>"dog"</code>, <code>"DOG"</code> → 3 tokens, 1 concept.<br/>
+        <code>"colour"</code> vs <code>"color"</code> → 2 tokens, 1 concept.<br/>
+        <code>"&lt;br/&gt;"</code>, <code>"&lt;p&gt;"</code> → noise masquerading as signal.
+      </div>
+      <div class="hbox" style="margin:0.4em 0;">
+        <strong>Goal:</strong> reduce vocabulary without losing
+        <em>meaningful</em> distinctions.
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">The trade-off</div>
+        Aggressive normalisation loses information.<br/><br/>
+        <span style="color:var(--text-dim); font-size:0.9em;">
+          "U.S." → "us" may conflate country and pronoun.<br/>
+          Removing punctuation loses "!!!" vs "."
+        </span>
+      </div>
+      <div class="hbox gold">
+        <strong>Rule of thumb:</strong><br/>
+        Normalise what is noise.<br/>Preserve what carries meaning.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>A standard normalisation pipeline</h2>
+  <div class="cols cols-6040" style="font-size:0.76em;">
+    <div>
+      <div class="step-row fragment">
+        <div class="step-num">1</div>
+        <div><strong>Lowercase</strong> — "The" and "the" are the same in most contexts.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">2</div>
+        <div><strong>Strip HTML</strong> — <code>&lt;br/&gt;</code>, <code>&lt;p&gt;</code> are markup, not language.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">3</div>
+        <div><strong>Remove punctuation</strong> — replace non-alphanumeric with a space.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">4</div>
+        <div><strong>Collapse whitespace</strong> — multiple spaces → one space.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">5</div>
+        <div><strong>Strip</strong> — remove leading/trailing whitespace.</div>
+      </div>
+    </div>
+    <div class="fragment">
+<pre><code class="language-python">import re
+
+def preprocess_text(text: str) -> str:
+    text = text.lower()
+    text = re.sub(
+        r"&lt;[^&gt;]+&gt;", " ", text)
+    text = re.sub(
+        r"[^a-z0-9 ]", " ", text)
+    text = re.sub(r" +", " ", text)
+    return text.strip()
+
+# Test:
+# "Hello, World! &lt;br/&gt;"
+# → "hello world"</code></pre>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Optional normalisation steps</h2>
+  <div class="cols cols-3" style="font-size:0.72em;">
+    <div class="card">
+      <div class="card-title">Stemming</div>
+      Heuristic root: strip suffixes.<br/>
+      <code>running → run</code><br/>
+      <code>flies → fli</code> ⚠<br/><br/>
+      Fast but lossy.<br/>
+      <span style="color:var(--text-dim);">Rarely used in deep learning.</span>
+    </div>
+    <div class="card gold">
+      <div class="card-title">Lemmatisation</div>
+      Dictionary-based morphological root.<br/>
+      <code>running → run</code><br/>
+      <code>flies → fly</code> ✓<br/><br/>
+      Slower but correct.<br/>
+      <span style="color:var(--text-dim);">Useful for classical models (S03).</span>
+    </div>
+    <div class="card navy">
+      <div class="card-title">Stop word removal</div>
+      Remove high-frequency function words:<br/>
+      <code>the, a, is, in, of, …</code><br/><br/>
+      Reduces noise for BoW.<br/>
+      <span style="color:var(--text-dim);">Can harm sequence models — context matters.</span>
+    </div>
+  </div>
+  <div class="hbox" style="font-size:0.72em; margin-top:0.7em;">
+    <strong>In this course:</strong> we use the minimal 5-step pipeline.
+    The TP ablates individual steps so you measure their impact empirically.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 3 -->
+<section class="section-slide">
+  <span class="section-num">03</span>
+  <h2>Tokenisation</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Breaking text into the atomic units a model operates on.</p>
+</section>
+
+<section>
+  <h2>Core vocabulary — terms you need to know</h2>
+  <div class="cols cols-2" style="font-size:0.74em;">
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Token</div>
+        The atomic unit of text a model operates on.
+        Depending on the tokeniser, a token can be a word, a subword, a character, or a byte.<br/>
+        <span style="color:var(--text-dim);">"running" may be 1 token or 2 (<code>run</code> + <code>ning</code>).</span>
+      </div>
+      <div class="card gold" style="margin-bottom:0.5em;">
+        <div class="card-title">Type vs Token</div>
+        <strong>Token</strong> — every occurrence of a word in a text.<br/>
+        <strong>Type</strong> — each <em>distinct</em> word form.<br/><br/>
+        "the cat sat on the mat" has <strong>6 tokens</strong>, <strong>5 types</strong> ("the" appears twice).
+      </div>
+      <div class="card">
+        <div class="card-title">Vocabulary V</div>
+        The complete set of unique types in the corpus.<br/>
+        <span style="font-family:'DM Mono',monospace; color:var(--mint);">|V|</span> = vocabulary size — the number of distinct tokens the model knows.
+      </div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Corpus</div>
+        The full collection of text used to train or evaluate a model.<br/>
+        <span style="color:var(--text-dim);">Our corpus this session: AG News / IMDb / Emotion.</span>
+      </div>
+      <div class="card gold" style="margin-bottom:0.5em;">
+        <div class="card-title">Document</div>
+        A single unit of text in the corpus — one news article, one review, one sentence.<br/>
+        <span style="color:var(--text-dim);">The granularity depends on the task.</span>
+      </div>
+      <div class="card">
+        <div class="card-title">Out-of-Vocabulary (OOV)</div>
+        A token seen at inference time but never during training.<br/>
+        Subword tokenisers reduce OOV to near-zero by decomposing unknown words.<br/>
+        <span style="color:var(--text-dim);">Whitespace tokenisers have no OOV strategy.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Three tokenisers, one sentence</h2>
+  <div class="hbox gold" style="font-size:0.72em; margin-bottom:0.6em; text-align:center;">
+    "The U.S. economy grew by 2.3% in Q3."
+  </div>
+  <div class="cols cols-3" style="font-size:0.68em;">
+    <div>
+      <div class="card-title" style="font-family:'DM Mono',monospace; font-size:0.8em; margin-bottom:0.4em;">Whitespace split</div>
+      <div class="token-stream">
+        <span class="tok a">The</span><span class="tok a">U.S.</span>
+        <span class="tok a">economy</span><span class="tok a">grew</span>
+        <span class="tok a">by</span><span class="tok a">2.3%</span>
+        <span class="tok a">in</span><span class="tok a">Q3.</span>
+      </div>
+      <p style="color:var(--text-dim); margin-top:0.3em;">8 tokens. Punctuation attached to words.</p>
+    </div>
+    <div>
+      <div class="card-title" style="font-family:'DM Mono',monospace; font-size:0.8em; margin-bottom:0.4em;">NLTK word_tokenize</div>
+      <div class="token-stream">
+        <span class="tok b">The</span><span class="tok b">U.S.</span>
+        <span class="tok b">economy</span><span class="tok b">grew</span>
+        <span class="tok b">by</span><span class="tok b">2.3</span>
+        <span class="tok b">%</span><span class="tok b">in</span>
+        <span class="tok b">Q3</span><span class="tok b">.</span>
+      </div>
+      <p style="color:var(--text-dim); margin-top:0.3em;">10 tokens. Punctuation split by rules.</p>
+    </div>
+    <div>
+      <div class="card-title" style="font-family:'DM Mono',monospace; font-size:0.8em; margin-bottom:0.4em;">GPT-4 BPE</div>
+      <div class="token-stream">
+        <span class="tok c">The</span><span class="tok c">ĠU</span>
+        <span class="tok c">.S</span><span class="tok c">.</span>
+        <span class="tok c">Ġeconomy</span>
+        <span class="tok c">Ġgrew</span><span class="tok c">Ġby</span>
+        <span class="tok c">Ġ2</span><span class="tok c">.3</span>
+        <span class="tok c">%</span><span class="tok c">Ġin</span>
+        <span class="tok c">ĠQ</span><span class="tok c">3</span><span class="tok c">.</span>
+      </div>
+      <p style="color:var(--text-dim); margin-top:0.3em;">13 tokens. Subword units, data-driven.</p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Word frequency — the first signal in any text</h2>
+  <div style="font-size:0.76em;">
+    <p style="color:var(--text-dim); margin-bottom:0.5em;">
+      Before building any model, count things. Frequency is the most basic statistic you can compute on text — and it reveals structure immediately.
+    </p>
+    <div class="cols cols-2" style="margin-bottom:0.5em;">
+      <div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">What frequency tells you</div>
+          <ul>
+            <li>Which words dominate the corpus</li>
+            <li>Which words are rare or unique</li>
+            <li>Whether a preprocessing step worked</li>
+            <li>Whether classes use different vocabularies</li>
+          </ul>
+        </div>
+        <div class="hbox gold">
+          <strong>Zipf's Law</strong><br/>
+          In any natural language corpus, the frequency of a word is roughly
+          inversely proportional to its rank.<br/><br/>
+          The 1st most frequent word appears ~2× more than the 2nd,
+          ~3× more than the 3rd, and so on.<br/>
+          <span style="color:var(--text-dim);">Consequence: a tiny set of tokens covers most of the text.</span>
+        </div>
+      </div>
+      <div>
+        <div class="card-title" style="font-family:'DM Mono',monospace; font-size:0.75em; margin-bottom:0.4em;">Typical top-10 in a news corpus</div>
+        <table style="width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:0.78em;">
+          <tr style="color:var(--text-dim); border-bottom:1px solid var(--border);">
+            <th style="text-align:left; padding:0.2em 0.4em;">rank</th>
+            <th style="text-align:left; padding:0.2em 0.4em;">token</th>
+            <th style="text-align:right; padding:0.2em 0.4em;">freq</th>
+            <th style="text-align:left; padding:0.2em 0.4em;">useful?</th>
+          </tr>
+          <tr><td style="padding:0.2em 0.4em;">1</td><td>the</td><td style="text-align:right;">84,230</td><td style="color:var(--red);">✗ stop word</td></tr>
+          <tr><td style="padding:0.2em 0.4em;">2</td><td>of</td><td style="text-align:right;">51,400</td><td style="color:var(--red);">✗ stop word</td></tr>
+          <tr><td style="padding:0.2em 0.4em;">3</td><td>in</td><td style="text-align:right;">43,100</td><td style="color:var(--red);">✗ stop word</td></tr>
+          <tr><td style="padding:0.2em 0.4em; color:var(--text-dim);">...</td><td style="color:var(--text-dim);">...</td><td style="text-align:right; color:var(--text-dim);">...</td><td></td></tr>
+          <tr><td style="padding:0.2em 0.4em;">41</td><td style="color:var(--mint);">said</td><td style="text-align:right; color:var(--mint);">8,900</td><td style="color:var(--gold);">~ depends</td></tr>
+          <tr><td style="padding:0.2em 0.4em;">89</td><td style="color:var(--mint);">percent</td><td style="text-align:right; color:var(--mint);">4,200</td><td style="color:var(--green);">✓ Business</td></tr>
+          <tr><td style="padding:0.2em 0.4em;">142</td><td style="color:var(--mint);">goal</td><td style="text-align:right; color:var(--mint);">2,100</td><td style="color:var(--green);">✓ Sports</td></tr>
+        </table>
+        <p style="color:var(--text-dim); font-size:0.8em; margin-top:0.4em;">
+          The top tokens are function words — grammatically necessary but class-neutral.
+          The informative tokens sit further down the frequency list.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Frequency as a feature — why it works for classification</h2>
+  <div style="font-size:0.76em;">
+    <p style="color:var(--text-dim); margin-bottom:0.5em;">
+      Once you have tokens, the simplest question you can ask is: <em>how often does each token appear?</em>
+    </p>
+    <div class="cols cols-2" style="margin-bottom:0.6em;">
+      <div>
+        <div class="card-title" style="font-family:'DM Mono',monospace; font-size:0.75em; margin-bottom:0.4em;">Document A — Sports</div>
+        <div class="token-stream" style="justify-content:flex-start;">
+          <span class="tok a">goal</span><span class="tok a">goal</span><span class="tok a">match</span>
+          <span class="tok a">team</span><span class="tok a">player</span><span class="tok a">score</span>
+          <span class="tok">the</span><span class="tok">in</span><span class="tok">a</span>
+        </div>
+      </div>
+      <div>
+        <div class="card-title" style="font-family:'DM Mono',monospace; font-size:0.75em; margin-bottom:0.4em;">Document B — Politics</div>
+        <div class="token-stream" style="justify-content:flex-start;">
+          <span class="tok b">election</span><span class="tok b">vote</span><span class="tok b">senate</span>
+          <span class="tok b">president</span><span class="tok b">policy</span>
+          <span class="tok">the</span><span class="tok">in</span><span class="tok">a</span>
+        </div>
+      </div>
+    </div>
+    <div class="fragment">
+      <p>Each document becomes a <strong>count vector</strong> over the vocabulary:</p>
+      <div class="cols cols-2">
+        <div class="formula" style="font-size:0.78em;">
+          A = [goal:2, match:1, team:1, election:0, vote:0, ...]<br/>
+          B = [goal:0, match:0, team:0, election:1, vote:1, ...]
+        </div>
+        <div class="hbox" style="font-size:0.82em;">
+          A classifier learns that high <code>goal</code> count → Sports.<br/>
+          High <code>election</code> count → Politics.<br/>
+          <span style="color:var(--text-dim);">The text has become a point in |V|-dimensional space.</span>
+        </div>
+      </div>
+    </div>
+    <div class="fragment" style="margin-top:0.4em;">
+      <div class="cols cols-3" style="font-size:0.78em;">
+        <div class="card">
+          <div class="card-title">Term Frequency (TF)</div>
+          How often token <em>t</em> appears in document <em>d</em>.<br/>
+          <div class="formula" style="font-size:0.9em;">TF(t,d) = count(t in d)</div>
+        </div>
+        <div class="card gold">
+          <div class="card-title">Document Frequency (DF)</div>
+          How many documents in the corpus contain token <em>t</em>.<br/>
+          <span style="color:var(--text-dim);">High DF = common across all classes = less informative.</span>
+        </div>
+        <div class="card navy">
+          <div class="card-title">TF-IDF</div>
+          Downweights tokens frequent everywhere, upweights tokens distinctive to a document.<br/>
+          <span style="color:var(--text-dim);">Formula and worked example — next two slides.</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>TF-IDF — the formula</h2>
+  <div style="font-size:0.76em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Raw counts have a problem: "the" appears 50,000 times and "goal" appears 200 times,
+      but "goal" is far more informative. TF-IDF corrects for this.
+    </p>
+    <div class="cols cols-2" style="margin-bottom:0.5em;">
+      <div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">Term Frequency — TF</div>
+          How often token <em>t</em> appears in document <em>d</em>.
+          Normalised by document length to make short and long documents comparable.<br/>
+          <div class="formula">TF(t, d) = count(t in d) / |d|</div>
+        </div>
+        <div class="card gold">
+          <div class="card-title">Inverse Document Frequency — IDF</div>
+          Downweights tokens that appear in many documents — they carry little class-specific information.<br/>
+          <div class="formula">IDF(t) = log ( N / (1 + DF(t)) )</div>
+          <span style="color:var(--text-dim);">N = total documents. +1 avoids division by zero.</span>
+        </div>
+      </div>
+      <div>
+        <div class="card navy" style="margin-bottom:0.5em;">
+          <div class="card-title">TF-IDF score</div>
+          The product of the two.<br/>
+          <div class="formula">TF-IDF(t, d) = TF(t, d) · IDF(t)</div>
+          High score = token appears often <em>in this document</em>
+          but rarely across <em>the corpus</em>.<br/>
+          That is the signature of a discriminative word.
+        </div>
+        <div class="hbox">
+          <strong>Intuition:</strong><br/>
+          "the" → high TF, but also high DF → IDF ≈ 0 → TF-IDF ≈ 0<br/>
+          "goal" → moderate TF, low DF in non-sports docs → high TF-IDF in sports documents
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>TF-IDF — worked example</h2>
+  <div style="font-size:0.74em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Corpus of <strong>4 documents</strong>. We compute TF-IDF for two tokens: <code>goal</code> and <code>the</code>.
+    </p>
+    <div class="cols cols-2" style="margin-bottom:0.55em;">
+      <div>
+        <table style="width:100%; border-collapse:collapse; font-family:'DM Mono',monospace; font-size:0.78em;">
+          <tr style="color:var(--text-dim); border-bottom:1px solid var(--border);">
+            <th style="text-align:left; padding:0.25em 0.4em;">doc</th>
+            <th style="text-align:left; padding:0.25em 0.4em;">label</th>
+            <th style="text-align:right; padding:0.25em 0.4em;">words</th>
+            <th style="text-align:right; padding:0.25em 0.4em;">"goal"</th>
+            <th style="text-align:right; padding:0.25em 0.4em;">"the"</th>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.25em 0.4em; color:var(--mint);">D1</td>
+            <td style="color:var(--mint);">Sports</td>
+            <td style="text-align:right;">100</td>
+            <td style="text-align:right; color:var(--mint);">4</td>
+            <td style="text-align:right;">12</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.25em 0.4em; color:var(--gold);">D2</td>
+            <td style="color:var(--gold);">Politics</td>
+            <td style="text-align:right;">80</td>
+            <td style="text-align:right;">0</td>
+            <td style="text-align:right; color:var(--gold);">10</td>
+          </tr>
+          <tr style="border-bottom:1px solid var(--border);">
+            <td style="padding:0.25em 0.4em; color:var(--gold);">D3</td>
+            <td style="color:var(--gold);">Politics</td>
+            <td style="text-align:right;">120</td>
+            <td style="text-align:right;">0</td>
+            <td style="text-align:right; color:var(--gold);">15</td>
+          </tr>
+          <tr>
+            <td style="padding:0.25em 0.4em; color:var(--mint);">D4</td>
+            <td style="color:var(--mint);">Sports</td>
+            <td style="text-align:right;">90</td>
+            <td style="text-align:right; color:var(--mint);">3</td>
+            <td style="text-align:right;">11</td>
+          </tr>
+        </table>
+      </div>
+      <div>
+        <div class="card" style="margin-bottom:0.45em; font-size:0.88em;">
+          <div class="card-title">IDF — computed once over the corpus</div>
+          N = 4<br/>
+          DF("goal") = 2 (D1, D4)<br/>
+          DF("the")  = 4 (all docs)<br/><br/>
+          <div class="formula" style="font-size:0.88em;">IDF("goal") = log(4 / 3) ≈ 0.29</div>
+          <div class="formula" style="font-size:0.88em;">IDF("the")  = log(4 / 5) ≈ −0.22 → clipped to 0</div>
+        </div>
+      </div>
+    </div>
+    <div class="fragment">
+      <div class="cols cols-2">
+        <div class="card gold" style="font-size:0.85em;">
+          <div class="card-title">TF-IDF("goal", D1)</div>
+          TF = 4/100 = 0.04<br/>
+          IDF = 0.29<br/>
+          <div class="formula" style="font-size:0.9em;">TF-IDF = 0.04 × 0.29 = <strong style="color:var(--green);">0.012</strong></div>
+          Non-zero — "goal" is distinctive for D1.
+        </div>
+        <div class="card" style="font-size:0.85em;">
+          <div class="card-title">TF-IDF("the", D1)</div>
+          TF = 12/100 = 0.12<br/>
+          IDF ≈ 0 (appears in every doc)<br/>
+          <div class="formula" style="font-size:0.9em;">TF-IDF = 0.12 × 0 = <strong style="color:var(--red);">0.000</strong></div>
+          Zero — "the" is useless as a feature.
+        </div>
+      </div>
+      <p style="color:var(--text-dim); font-size:0.78em; margin-top:0.4em;">
+        The full document vector for D1 is a |V|-dimensional array. Most entries are 0.
+        A classifier trained on these vectors learns to weight the non-zero, high-IDF tokens.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The vocabulary size trade-off</h2>
+  <div class="cols cols-2" style="font-size:0.76em;">
+    <div>
+      <div class="hbox" style="margin-bottom:0.5em;">
+        <strong>Large vocabulary</strong><br/>
+        + Each token is more meaningful<br/>
+        + Shorter sequences<br/>
+        − Many rare / unseen words (OOV)<br/>
+        − Huge embedding matrix to learn
+      </div>
+      <div class="hbox red">
+        <strong>Small vocabulary (character-level)</strong><br/>
+        + Zero OOV rate<br/>
+        + Tiny embedding matrix<br/>
+        − Very long sequences<br/>
+        − Single characters carry little meaning
+      </div>
+    </div>
+    <div>
+      <div class="card gold" style="margin-bottom:0.5em;">
+        <div class="card-title">The sweet spot: subword</div>
+        Frequent words → one token.<br/>
+        Rare words → split into subword units.<br/><br/>
+        <code>unhappiness</code><br/>
+        → <code>un</code> + <code>happi</code> + <code>ness</code>
+      </div>
+      <div style="font-size:0.82em; color:var(--text-dim); padding-left:0.2em;">
+        GPT-4:  ~100,000 tokens<br/>
+        BERT:    ~30,000 tokens<br/>
+        Chars:       256 bytes
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Byte-Pair Encoding (BPE)</h2>
+  <p style="font-size:0.7em; color:var(--text-dim);">A data-driven algorithm. The vocabulary reflects corpus frequency, not grammar rules.</p>
+  <div class="cols cols-6040" style="font-size:0.76em;">
+    <div>
+      <div class="step-row fragment">
+        <div class="step-num">1</div>
+        <div><strong>Initialise</strong> — every character is a token. Vocabulary = all unique characters.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">2</div>
+        <div><strong>Count</strong> — find the most frequent adjacent token pair in the training corpus.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">3</div>
+        <div><strong>Merge</strong> — combine that pair into a new token. Add to vocabulary.</div>
+      </div>
+      <div class="step-row fragment">
+        <div class="step-num">4</div>
+        <div><strong>Repeat</strong> — until vocabulary reaches target size (e.g. 50,000 merges for GPT-2).</div>
+      </div>
+      <div class="fragment" style="margin-top:0.6em;">
+        <div class="flow">
+          <span class="node">l o w</span>
+          <span class="arr">→</span>
+          <span class="node active">lo w</span>
+          <span class="arr">→</span>
+          <span class="node">low</span>
+          <span class="arr">→</span>
+          <span class="node active">low er</span>
+        </div>
+      </div>
+    </div>
+    <div class="fragment">
+<pre><code class="language-python">import tiktoken
+
+enc = tiktoken.encoding_for_model(
+    "gpt-4"
+)
+tokens = enc.encode(
+    "unhappiness"
+)
+print(tokens)
+# [1906, 81, 1918, 1481]
+
+decoded = [
+    enc.decode([t])
+    for t in tokens
+]
+print(decoded)
+# ['un','h','app','iness']</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 4 -->
+<section class="section-slide">
+  <span class="section-num">04</span>
+  <h2>Dataset Hygiene</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">How to not fool yourself — or your model.</p>
+</section>
+
+<section>
+  <h2>Train / Validation / Test</h2>
+  <div class="cols cols-3" style="font-size:0.74em; margin-bottom:0.6em;">
+    <div class="card">
+      <div class="card-title">Train set</div>
+      The model <strong>learns</strong> from this.<br/>
+      Typically 70–80% of data.<br/><br/>
+      <span style="color:var(--text-dim);">Used in every gradient step.</span>
+    </div>
+    <div class="card gold">
+      <div class="card-title">Validation set</div>
+      You <strong>tune</strong> hyperparameters on this.<br/>
+      Typically 10–15%.<br/><br/>
+      <span style="color:var(--text-dim);">Used to select config. Never train on it.</span>
+    </div>
+    <div class="card red">
+      <div class="card-title">Test set</div>
+      You <strong>report results</strong> from this.<br/>
+      Typically 10–20%.<br/><br/>
+      <span style="color:var(--text-dim);">Touch exactly once. At the very end.</span>
+    </div>
+  </div>
+  <div class="hbox red fragment" style="font-size:0.73em;">
+    <strong>Golden rule:</strong> never use test set performance to make any decision.
+    The moment you do, it becomes a second validation set and your numbers are optimistic.
+  </div>
+</section>
+
+<section>
+  <h2>Data leakage</h2>
+  <div class="cols cols-2" style="font-size:0.76em;">
+    <div>
+      <p>Leakage = information from val/test contaminates training.</p>
+      <div class="hbox red" style="margin:0.5em 0;">
+        <strong>Classic mistake:</strong><br/>
+        Fit TF-IDF on the full dataset, <em>then</em> split.<br/>
+        The vocabulary has seen test documents.<br/>
+        Your model knows things it should not.
+      </div>
+      <div class="hbox" style="margin:0.4em 0;">
+        <strong>Correct order:</strong><br/>
+        Split → fit preprocessing on train only →
+        transform val/test with those parameters.
+      </div>
+    </div>
+    <div>
+      <div class="flow" style="flex-direction:column; align-items:flex-start; gap:0.35em;">
+        <div style="display:flex; align-items:center; gap:0.4em;">
+          <span class="node active">1. Split</span>
+        </div>
+        <div style="margin-left:0.5em; color:var(--text-dim);">↓</div>
+        <div style="display:flex; align-items:center; gap:0.4em;">
+          <span class="node active">2. Fit on train only</span>
+        </div>
+        <div style="margin-left:0.5em; color:var(--text-dim);">↓</div>
+        <div style="display:flex; align-items:center; gap:0.35em;">
+          <span class="node">3a. Transform train</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.35em; margin-top:0.2em;">
+          <span class="node">3b. Transform val</span>
+        </div>
+        <div style="display:flex; align-items:center; gap:0.35em; margin-top:0.2em;">
+          <span class="node">3c. Transform test</span>
+        </div>
+      </div>
+      <p style="font-size:0.7em; color:var(--text-dim); margin-top:0.5em;">
+        scikit-learn's <code>Pipeline</code> enforces this automatically.
+      </p>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Stratified splitting</h2>
+  <div class="cols cols-2" style="font-size:0.76em;">
+    <div>
+      <p>Random splitting can misrepresent rare classes, especially in small val/test sets.</p>
+      <div class="hbox red" style="margin:0.5em 0; font-size:0.9em;">
+        <strong>Without stratification:</strong><br/>
+        A rare class (5% of data) might appear<br/>
+        0 times in a small validation set.<br/>
+        Your val metrics are meaningless for that class.
+      </div>
+      <div class="hbox" style="font-size:0.9em;">
+        <strong>With stratification:</strong><br/>
+        Every split has the same class proportions<br/>
+        as the full dataset. Evaluation is representative.
+      </div>
+    </div>
+    <div>
+<pre><code class="language-python">from sklearn.model_selection \
+    import train_test_split
+
+train_df, val_df = train_test_split(
+    df,
+    test_size=0.1,
+    stratify=df["label"],  # ← key
+    random_state=42
+)
+
+# Verify:
+print(
+    train_df["label"]
+    .value_counts(normalize=True)
+)</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 5 -->
+<section class="section-slide">
+  <span class="section-num">05</span>
+  <h2>Evaluation &amp; Baselines</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Accuracy is not enough. Here is why.</p>
+</section>
+
+<section>
+  <h2>The confusion matrix</h2>
+  <div class="cols cols-2" style="font-size:0.76em;">
+    <div>
+      <p>For binary classification, four possible outcomes:</p>
+      <table class="cm-table" style="margin: 0.7em 0;">
+        <tr>
+          <th></th><th>Predicted +</th><th>Predicted −</th>
+        </tr>
+        <tr>
+          <th>Actual +</th>
+          <td class="tp">TP<br/><span style="font-size:0.8em; opacity:0.7;">True Positive</span></td>
+          <td class="fn">FN<br/><span style="font-size:0.8em; opacity:0.7;">False Negative</span></td>
+        </tr>
+        <tr>
+          <th>Actual −</th>
+          <td class="fp">FP<br/><span style="font-size:0.8em; opacity:0.7;">False Positive</span></td>
+          <td class="tn">TN<br/><span style="font-size:0.8em; opacity:0.7;">True Negative</span></td>
+        </tr>
+      </table>
+    </div>
+    <div>
+      <div class="formula fragment">Accuracy = (TP + TN) / (TP+TN+FP+FN)</div>
+      <div class="formula fragment">Precision = TP / (TP + FP)</div>
+      <div class="formula fragment">Recall &nbsp;&nbsp;= TP / (TP + FN)</div>
+      <div class="fragment" style="font-size:0.72em; margin-top:0.5em; color:var(--text-dim);">
+        <strong style="color:var(--mint);">Precision:</strong> of all my positive predictions, how many were correct?<br/>
+        <strong style="color:var(--mint);">Recall:</strong> of all actual positives, how many did I find?
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Why accuracy fails on imbalanced data</h2>
+  <div style="font-size:0.76em;">
+    <div class="hbox red" style="margin-bottom:0.6em;">
+      <strong>Scenario:</strong> spam detection. 95% of emails are legitimate, 5% are spam.<br/>
+      A classifier that <em>always</em> predicts "not spam" gets <strong>95% accuracy</strong>.<br/>
+      It is completely useless — it catches zero spam.
+    </div>
+    <div class="cols cols-2 fragment">
+      <div class="card gold">
+        <div class="card-title">F1 Score — the harmonic mean of P and R</div>
+        <div class="formula" style="color:var(--gold);">F1 = 2 · (P · R) / (P + R)</div>
+        Both P and R must be high for F1 to be high.<br/>
+        Penalises models that sacrifice one for the other.
+      </div>
+      <div class="card">
+        <div class="card-title">Macro vs Weighted F1</div>
+        <strong>Macro F1:</strong> average F1 across classes, equally weighted.<br/>
+        Treats rare and frequent classes the same.<br/><br/>
+        <strong>Weighted F1:</strong> weighted by class support.<br/>
+        Reflects production distribution.
+      </div>
+    </div>
+    <p class="fragment" style="font-size:0.7em; margin-top:0.5em; color:var(--text-dim);">
+      Report macro F1 when all classes matter equally.
+      Report weighted F1 for overall production performance.
+      <strong style="color:var(--mint);">Always report both.</strong>
+    </p>
+  </div>
+</section>
+
+<section>
+  <h2>The majority-class baseline</h2>
+  <div class="cols cols-2" style="font-size:0.76em;">
+    <div>
+      <div class="hbox" style="margin-bottom:0.5em;">
+        Find the most frequent class in the training set.<br/>
+        Predict that class for every input.<br/>
+        <strong>Ignore the text entirely.</strong>
+      </div>
+      <div class="card gold" style="margin-bottom:0.5em;">
+        <div class="card-title">What it tells you</div>
+        Balanced K classes → baseline accuracy = 1/K<br/>
+        Imbalanced (90% majority) → 90% accuracy<br/>
+        <span style="color:var(--text-dim);">In the second case, accuracy is misleading.</span>
+      </div>
+      <div class="hbox red">
+        <strong>Macro F1 of baseline is always very low.</strong><br/>
+        Only one class has non-zero recall.<br/>
+        This is the honest number to beat.
+      </div>
+    </div>
+    <div>
+<pre><code class="language-python">from collections import Counter
+from sklearn.metrics import \
+    classification_report
+
+def majority_baseline(train_df, eval_df):
+    majority = (
+        Counter(train_df["label"])
+        .most_common(1)[0][0]
+    )
+    y_true = eval_df["label"].tolist()
+    y_pred = [majority] * len(y_true)
+    return y_true, y_pred
+
+y_true, y_pred = majority_baseline(
+    train_df, test_df
+)
+print(classification_report(
+    y_true, y_pred,
+    zero_division=0
+))</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SUMMARY -->
+<section>
+  <h2>Summary</h2>
+  <div class="cols cols-2" style="font-size:0.73em;">
+    <div>
+      <div class="step-row">
+        <div class="step-num">0</div>
+        <div><strong>NLP</strong> gives computers the ability to process and generate human language. It is hard because language is ambiguous.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div><strong>Tasks</strong> differ by output type: label / token label / sequence / span.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div><strong>Normalise</strong> before tokenising. Decisions here cascade downstream.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div><strong>Tokenisation</strong> is a design choice. Subword (BPE) is the modern default.</div>
+      </div>
+    </div>
+    <div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div><strong>Split before fitting.</strong> Never leak information from val/test into training.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">5</div>
+        <div><strong>F1 over accuracy</strong> on imbalanced data. Report macro and weighted.</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">6</div>
+        <div><strong>Baseline first.</strong> Every model must beat the majority classifier. The TP builds a comparison table — this session is row 1.</div>
+      </div>
+    </div>
+  </div>
+  <div class="hbox fragment" style="font-size:0.72em; margin-top:0.7em;">
+    <strong>Now:</strong> open <code>tp01_tokenization.ipynb</code>.
+    The deliverable is a comparison table — Session 1 numbers are the floor.
+    Every future session adds a row.
+  </div>
+  <div style="text-align:center; margin-top:0.5em;" class="fragment">
+    <span class="pill pill-mint">NLP intro</span>
+    <span class="pill pill-gold">normalisation</span>
+    <span class="pill pill-navy">BPE</span>
+    <span class="pill pill-mint">train/val/test</span>
+    <span class="pill pill-gold">leakage</span>
+    <span class="pill pill-navy">stratification</span>
+    <span class="pill pill-mint">F1</span>
+    <span class="pill pill-gold">majority baseline</span>
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<!-- Reveal.js + plugins (all from same CDN version) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    progress: true,
+    center: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    width: 1200,
+    height: 700,
+    margin: 0.06,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>
