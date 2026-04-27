@@ -1,0 +1,1297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NLP — Session 02: Language Models &amp; Classical Classifiers</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css"/>
+
+<!-- MathJax -->
+<script>
+  MathJax = {
+    tex: { inlineMath: [['$','$'], ['\\(','\\)']], displayMath: [['$$','$$'],['\\[','\\]']], tags: 'ams' },
+    options: { skipHtmlTags: ['script','noscript','style','textarea'] }
+  };
+</script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml.js" async></script>
+
+<style>
+/* ── Palette (identical to Session 01) ───────────────────────────── */
+:root {
+  --bg:        #0d1117;
+  --surface:   #161b22;
+  --border:    #30363d;
+  --mint:      #56c8ba;
+  --mint-dim:  #1e4a45;
+  --navy:      #4a6fc8;
+  --navy-dim:  #1a2740;
+  --gold:      #e8c47a;
+  --gold-dim:  #3d2e0f;
+  --text:      #e6edf3;
+  --text-dim:  #8b949e;
+  --red:       #f47067;
+  --red-dim:   #3d1212;
+  --green:     #7ee787;
+  --green-dim: #122d1a;
+}
+
+/* ── Base ─────────────────────────────────────────────────────────── */
+.reveal-viewport { background: var(--bg); }
+.reveal {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 34px;
+  color: var(--text);
+}
+.reveal h1, .reveal h2, .reveal h3 {
+  font-family: 'DM Serif Display', serif;
+  text-transform: none;
+  letter-spacing: -0.01em;
+  color: var(--text);
+  margin-bottom: 0.4em;
+}
+.reveal h1 { font-size: 1.9em; line-height: 1.1; }
+.reveal h2 { font-size: 1.25em; color: var(--mint); }
+.reveal h3 { font-size: 0.95em; color: var(--gold); font-style: italic; }
+.reveal p  { font-weight: 300; line-height: 1.5; margin: 0.3em 0; }
+.reveal li { font-weight: 300; line-height: 1.5; margin: 0.2em 0; }
+.reveal strong { font-weight: 500; color: var(--mint); }
+.reveal em     { color: var(--gold); font-style: italic; }
+.reveal code {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.76em;
+  background: var(--surface);
+  padding: 0.1em 0.35em;
+  border-radius: 4px;
+  color: var(--mint);
+}
+.reveal pre { margin: 0.5em auto; box-shadow: none; width: 100%; }
+.reveal pre code {
+  font-size: 0.68em;
+  border-radius: 8px;
+  padding: 0.9em 1.1em;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  max-height: 360px;
+  overflow: auto;
+}
+.reveal ul { list-style: none; padding: 0; margin: 0.3em 0; }
+.reveal ul li::before { content: "›"; color: var(--mint); margin-right: 0.4em; font-weight: 500; }
+.reveal ul ul li::before { content: "·"; color: var(--text-dim); }
+.reveal a { color: var(--mint); text-decoration: none; border-bottom: 1px solid var(--mint-dim); }
+.reveal .slide-number { color: var(--text-dim); font-family: 'DM Mono', monospace; font-size: 0.5em; }
+.reveal .progress { color: var(--mint); height: 3px; }
+
+/* ── Section dividers ─────────────────────────────────────────────── */
+.section-slide { background: var(--navy-dim) !important; }
+.section-slide h2 { font-size: 1.9em; color: var(--text); }
+.section-num {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.45em;
+  color: var(--mint);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-bottom: 0.6em;
+}
+
+/* ── Layout ───────────────────────────────────────────────────────── */
+.cols { display: grid; gap: 1.2em; }
+.cols-2    { grid-template-columns: 1fr 1fr; }
+.cols-3    { grid-template-columns: 1fr 1fr 1fr; }
+.cols-6040 { grid-template-columns: 60fr 40fr; }
+.cols-4060 { grid-template-columns: 40fr 60fr; }
+
+/* ── Cards ────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.65em 0.9em;
+  font-size: 0.76em;
+}
+.card-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72em;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--mint);
+  margin-bottom: 0.4em;
+}
+.card.gold  { border-color: var(--gold); }
+.card.gold  .card-title { color: var(--gold); }
+.card.navy  { border-color: var(--navy); }
+.card.navy  .card-title { color: #7b9de8; }
+.card.red   { border-color: var(--red);  }
+.card.red   .card-title { color: var(--red); }
+.card.green { border-color: var(--green);}
+.card.green .card-title { color: var(--green); }
+
+/* ── Highlight boxes ──────────────────────────────────────────────── */
+.hbox {
+  border-left: 3px solid var(--mint);
+  background: var(--mint-dim);
+  border-radius: 0 8px 8px 0;
+  padding: 0.55em 0.9em;
+  font-size: 0.76em;
+  margin: 0.4em 0;
+}
+.hbox.gold  { border-color: var(--gold);  background: var(--gold-dim); }
+.hbox.red   { border-color: var(--red);   background: var(--red-dim);  }
+.hbox.navy  { border-color: var(--navy);  background: var(--navy-dim); }
+
+/* ── Formula blocks ───────────────────────────────────────────────── */
+.formula {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.76em;
+  color: var(--gold);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-left: 3px solid var(--gold);
+  border-radius: 0 6px 6px 0;
+  padding: 0.55em 0.9em;
+  margin: 0.4em 0;
+}
+
+/* ── Step rows ────────────────────────────────────────────────────── */
+.step-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6em;
+  margin: 0.35em 0;
+  font-size: 0.78em;
+}
+.step-num {
+  min-width: 1.5em;
+  height: 1.5em;
+  background: var(--mint-dim);
+  border: 1px solid var(--mint);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.72em;
+  color: var(--mint);
+  flex-shrink: 0;
+  margin-top: 0.1em;
+}
+
+/* ── Pills ────────────────────────────────────────────────────────── */
+.pill {
+  display: inline-block;
+  font-family: 'DM Mono', monospace;
+  font-size: 0.46em;
+  letter-spacing: 0.08em;
+  padding: 0.22em 0.7em;
+  border-radius: 999px;
+  margin: 0.15em;
+}
+.pill-mint  { background: var(--mint-dim);  color: var(--mint);  border: 1px solid var(--mint-dim); }
+.pill-gold  { background: var(--gold-dim);  color: var(--gold);  border: 1px solid var(--gold-dim); }
+.pill-navy  { background: var(--navy-dim);  color: #7b9de8;      border: 1px solid var(--navy-dim); }
+.pill-red   { background: var(--red-dim);   color: var(--red);   border: 1px solid var(--red-dim);  }
+.pill-green { background: var(--green-dim); color: var(--green); border: 1px solid var(--green-dim);}
+
+/* ── MathJax overrides ────────────────────────────────────────────── */
+.reveal .MJX-TEX { color: var(--gold); }
+mjx-container { color: var(--gold) !important; }
+
+/* ── Comparison table ─────────────────────────────────────────────── */
+.cmp-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.64em;
+  font-family: 'DM Mono', monospace;
+}
+.cmp-table th {
+  color: var(--mint);
+  border-bottom: 1px solid var(--border);
+  padding: 0.3em 0.6em;
+  text-align: left;
+}
+.cmp-table td {
+  border-bottom: 1px solid var(--border);
+  padding: 0.28em 0.6em;
+  color: var(--text-dim);
+}
+.cmp-table tr.highlight td { color: var(--gold); }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ═══════════════════════════════════════════════════════ TITLE -->
+<section>
+  <div class="title-meta" style="font-family:'DM Mono',monospace; font-size:0.36em; color:var(--text-dim); letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.9em;">
+    Natural Language Processing · Session 02 / 08
+  </div>
+  <h1>Language Models &amp;<br/>Classical Classifiers</h1>
+  <h3 style="margin-top:0.3em;">N-gram LMs · Naive Bayes · Logistic Regression</h3>
+  <p style="color:var(--text-dim); font-size:0.55em; margin-top:1.2em;">
+    Oscar de Felice &nbsp;·&nbsp; Head of AI, WhiteLab Genomics
+  </p>
+  <div style="margin-top:1em;">
+    <span class="pill pill-mint">n-gram LM</span>
+    <span class="pill pill-gold">MLE</span>
+    <span class="pill pill-navy">perplexity</span>
+    <span class="pill pill-mint">Laplace smoothing</span>
+    <span class="pill pill-gold">Naive Bayes</span>
+    <span class="pill pill-navy">log-likelihood</span>
+    <span class="pill pill-mint">logistic regression</span>
+    <span class="pill pill-gold">gradient descent</span>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ AGENDA -->
+<section>
+  <h2>Today — structure</h2>
+  <div class="cols cols-2" style="font-size:0.76em; margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">00 · TP01 review (20 min)</div>
+        Exercise 6.4 homework walkthrough. Key takeaways.
+      </div>
+      <div class="card gold" style="margin-bottom:0.55em;">
+        <div class="card-title">01 · N-gram language models</div>
+        Probability of sequences. MLE. Markov assumption. Perplexity. Smoothing.
+      </div>
+    </div>
+    <div>
+      <div class="card navy" style="margin-bottom:0.55em;">
+        <div class="card-title">02 · Naive Bayes</div>
+        Generative classifiers. Bayes' theorem. MLE derivation. Log-space.
+      </div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">03 · Logistic Regression</div>
+        Discriminative classifiers. Sigmoid. Cross-entropy. Gradient derivation.
+      </div>
+    </div>
+  </div>
+  <div class="hbox" style="font-size:0.7em; margin-top:0.5em;">
+    <strong>TP02:</strong> implement and evaluate n-gram LMs on AG News.
+    NB is the homework before Session 3.
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 00 -->
+<section class="section-slide">
+  <span class="section-num">00</span>
+  <h2>TP01 Review</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Exercise 6.4 — Class fingerprinting with TF-IDF.</p>
+</section>
+
+<section>
+  <h2>What you should have seen — ex 6.4</h2>
+  <div class="cols cols-2" style="font-size:0.76em;">
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Expected top tokens per class</div>
+        <ul>
+          <li><strong>World:</strong> government, president, military, war, minister</li>
+          <li><strong>Sports:</strong> game, season, cup, match, championship</li>
+          <li><strong>Business:</strong> company, percent, market, billion, shares</li>
+          <li><strong>Sci/Tech:</strong> software, microsoft, technology, internet, windows</li>
+        </ul>
+      </div>
+      <div class="hbox gold">
+        <strong>Key insight:</strong> if your heatmap showed stop words
+        (<code>the</code>, <code>of</code>, <code>said</code>) as top tokens,
+        your preprocessing pipeline was not applied before TF-IDF.
+      </div>
+    </div>
+    <div>
+      <div class="card navy">
+        <div class="card-title">What the heatmap tells you</div>
+        <ul>
+          <li>Clean per-class clusters: problem is tractable</li>
+          <li>Sports / Business have the lowest cross-class overlap</li>
+          <li>World / Sci-Tech share geopolitical + tech terms</li>
+          <li>TF-IDF removes the Zipf bias from raw frequency</li>
+        </ul>
+      </div>
+      <div class="hbox" style="margin-top:0.5em;">
+        <strong>Carry forward:</strong> these top tokens are exactly the features
+        Naive Bayes and Logistic Regression will rely on.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Common mistakes — ex 6.4</h2>
+  <div style="font-size:0.8em;">
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div><strong>Dense materialisation.</strong> Calling <code>.toarray()</code> on the full TF-IDF matrix before the mean collapses it — OOM on large corpora. Use sparse column-wise mean: <code>X.mean(axis=0)</code> on a scipy sparse slice.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div><strong>Fitting on test data.</strong> The TF-IDF vectoriser must be fit on <code>train_df</code> only. Transforming val/test is fine; refitting is leakage.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div><strong>Confusing the two outputs.</strong> <code>mean_tfidf</code> is a matrix of scores (classes × vocab). <code>top_tokens</code> is a table of token names. They are not interchangeable.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div><strong>Not applying the preprocessing pipeline</strong> before fitting. The vectoriser sees raw text and the vocabulary balloons with punctuation and casing variants.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 01 -->
+<section class="section-slide">
+  <span class="section-num">01</span>
+  <h2>N-gram Language Models</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">
+    Assigning probabilities to sequences of tokens.
+  </p>
+</section>
+
+<!-- 1.1 — What is a language model -->
+<section>
+  <h2>What is a language model?</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox gold" style="margin-bottom:0.6em;">
+      <strong>Definition.</strong> A <em>language model</em> is a probability distribution over sequences of tokens.
+      Given a vocabulary $V$ and a sequence $W = (w_1, w_2, \ldots, w_T)$ with $w_t \in V$, a language model assigns:
+      $$P(W) = P(w_1, w_2, \ldots, w_T) \in [0, 1]$$
+      subject to $\displaystyle\sum_{W \in V^*} P(W) = 1$, where $V^*$ is the set of all finite sequences over $V$.
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">Intuition</div>
+        A language model answers: <em>"How likely is it that a fluent speaker of this language would produce this sequence?"</em>
+        <br/><br/>
+        <ul>
+          <li>"The dog barked loudly." — high probability</li>
+          <li>"Barked loudly the dog." — low probability (English)</li>
+          <li>"The dog meowed loudly." — medium (grammatical, unlikely)</li>
+        </ul>
+      </div>
+      <div class="card navy">
+        <div class="card-title">Applications</div>
+        <ul>
+          <li><strong>Speech recognition:</strong> among all transcripts consistent with the audio signal, pick the most probable sentence</li>
+          <li><strong>Machine translation:</strong> rank candidate translations by fluency</li>
+          <li><strong>Text generation:</strong> sample new sequences from the distribution</li>
+          <li><strong>Spell correction:</strong> $P(\text{"the cat"}) > P(\text{"teh cat"})$</li>
+          <li><strong>Compression:</strong> a good LM = efficient code (Shannon 1951)</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.2 — Chain rule -->
+<section>
+  <h2>The chain rule decomposition</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.5em;">
+      Any joint distribution over a sequence can be factored exactly using the chain rule of probability.
+    </p>
+    <div class="hbox gold" style="margin-bottom:0.6em;">
+      <strong>Chain rule:</strong>
+      $$P(w_1, w_2, \ldots, w_T) = P(w_1)\cdot P(w_2 \mid w_1)\cdot P(w_3 \mid w_1, w_2) \cdots P(w_T \mid w_1, \ldots, w_{T-1})$$
+      $$= \prod_{t=1}^{T} P(w_t \mid w_1, \ldots, w_{t-1})$$
+    </div>
+    <div class="cols cols-2" style="font-size:0.88em;">
+      <div class="card">
+        <div class="card-title">Worked example — 4-word sentence</div>
+        $P(\text{"the cat sat down"})$
+        <br/>
+        $= P(\text{the})$
+        <br/>
+        $\times\; P(\text{cat} \mid \text{the})$
+        <br/>
+        $\times\; P(\text{sat} \mid \text{the, cat})$
+        <br/>
+        $\times\; P(\text{down} \mid \text{the, cat, sat})$
+        <br/><br/>
+        Each factor is a well-defined conditional probability.
+      </div>
+      <div class="card red">
+        <div class="card-title">The tractability problem</div>
+        The last factor $P(w_T \mid w_1, \ldots, w_{T-1})$ conditions on a history of length $T-1$.
+        <br/><br/>
+        For a vocabulary of size $|V| = 50{,}000$ and sentences of length $T = 20$, the number of possible
+        histories is $50{,}000^{19}$ — astronomically larger than any corpus.
+        <br/><br/>
+        <span style="color:var(--text-dim);">We will never observe most histories even once. MLE is useless here.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.3 — Markov assumption -->
+<section>
+  <h2>The Markov assumption</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox" style="margin-bottom:0.5em;">
+      <strong>Markov assumption of order $n-1$:</strong>
+      the probability of a word depends only on the preceding $n-1$ words, not the full history.
+      $$P(w_t \mid w_1, \ldots, w_{t-1}) \approx P(w_t \mid w_{t-n+1}, \ldots, w_{t-1})$$
+      This gives the <strong>n-gram model</strong>:
+      $$P(w_1, \ldots, w_T) \approx \prod_{t=1}^{T} P(w_t \mid w_{t-n+1}, \ldots, w_{t-1})$$
+    </div>
+    <div class="cols cols-3" style="font-size:0.88em;">
+      <div class="card">
+        <div class="card-title">Unigram — $n = 1$</div>
+        Context window: <em>none</em>.
+        $$P(w_t)$$
+        Words are fully independent. Equivalent to a bag-of-words model.
+        <br/><br/>
+        $P(\text{the cat sat}) = P(\text{the})\cdot P(\text{cat})\cdot P(\text{sat})$
+      </div>
+      <div class="card gold">
+        <div class="card-title">Bigram — $n = 2$</div>
+        Context window: <em>1 word</em>.
+        $$P(w_t \mid w_{t-1})$$
+        Captures immediate predecessor only.
+        <br/><br/>
+        $P(\text{the cat sat})$
+        <br/>
+        $= P(\text{the})\cdot P(\text{cat}\mid\text{the})\cdot P(\text{sat}\mid\text{cat})$
+      </div>
+      <div class="card navy">
+        <div class="card-title">Trigram — $n = 3$</div>
+        Context window: <em>2 words</em>.
+        $$P(w_t \mid w_{t-2}, w_{t-1})$$
+        Captures two-word context.
+        <br/><br/>
+        $P(\text{sat}\mid\text{the, cat})$
+        captures "the cat ___" as a unit.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.4 — MLE derivation -->
+<section>
+  <h2>Maximum Likelihood Estimation — derivation</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Given a corpus $\mathcal{D}$, we want the parameters $\theta$ that maximise $P(\mathcal{D} \mid \theta)$.
+      For bigrams, the parameters are all conditional probabilities $P(w \mid u)$.
+    </p>
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div>
+        <strong>Log-likelihood of the corpus</strong> (chain rule over all sentences):
+        $\mathcal{L}(\theta) = \sum_{(u,w) \in \mathcal{D}} C(u, w) \cdot \log P(w \mid u)$,
+        where $C(u, w)$ is the count of bigram $(u, w)$ in $\mathcal{D}$.
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div>
+        <strong>Constraint:</strong> for each context $u$, $\displaystyle\sum_{w \in V} P(w \mid u) = 1$.
+        Use a Lagrange multiplier $\lambda_u$.
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div>
+        <strong>Optimality condition:</strong> $\dfrac{\partial}{\partial P(w \mid u)}\left[\mathcal{L} - \lambda_u \sum_w P(w \mid u)\right] = 0$
+        gives $\dfrac{C(u, w)}{P(w \mid u)} = \lambda_u$.
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div>
+        Summing over $w$: $\lambda_u = C(u) \equiv \sum_w C(u, w)$.
+      </div>
+    </div>
+    <div class="hbox gold" style="margin-top:0.5em;">
+      <strong>MLE result:</strong>
+      $$\hat{P}(w \mid u) = \frac{C(u, w)}{C(u)} = \frac{\text{count of bigram }(u, w)}{\text{count of unigram }u}$$
+      This is just the relative frequency — MLE recovers the empirical count ratio.
+    </div>
+  </div>
+</section>
+
+<!-- 1.5 — MLE worked example with full bigram table -->
+<section>
+  <h2>MLE — worked example</h2>
+  <div style="font-size:0.78em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Corpus: <em>"&lt;s&gt; the cat sat &lt;/s&gt; &lt;s&gt; the cat ate &lt;/s&gt; &lt;s&gt; the dog sat &lt;/s&gt;"</em>
+      &nbsp;(3 sentences, 9 content tokens)
+    </p>
+    <div class="cols cols-2" style="font-size:0.88em;">
+      <div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">Unigram counts $C(w)$</div>
+          <code>the: 3 &nbsp; cat: 2 &nbsp; sat: 2</code><br/>
+          <code>ate: 1 &nbsp; dog: 1 &nbsp; &lt;s&gt;: 3</code>
+        </div>
+        <div class="card gold">
+          <div class="card-title">Bigram counts $C(u, w)$</div>
+          <code>&lt;s&gt;→the: 3 &nbsp; the→cat: 2 &nbsp; the→dog: 1</code><br/>
+          <code>cat→sat: 1 &nbsp; cat→ate: 1 &nbsp; dog→sat: 1</code>
+        </div>
+      </div>
+      <div class="card navy">
+        <div class="card-title">Bigram probability table $\hat{P}(w \mid u)$</div>
+        <br/>
+        $\hat{P}(\text{the} \mid \langle s\rangle) = \dfrac{3}{3} = 1.00$
+        <br/><br/>
+        $\hat{P}(\text{cat} \mid \text{the}) = \dfrac{2}{3} \approx 0.67$
+        <br/><br/>
+        $\hat{P}(\text{dog} \mid \text{the}) = \dfrac{1}{3} \approx 0.33$
+        <br/><br/>
+        $\hat{P}(\text{sat} \mid \text{cat}) = \dfrac{1}{2} = 0.50$
+        <br/><br/>
+        $\hat{P}(\text{ate} \mid \text{cat}) = \dfrac{1}{2} = 0.50$
+        <br/><br/>
+        <span style="color:var(--text-dim);">
+          Check: $0.67 + 0.33 = 1$ ✓ &nbsp; $0.50 + 0.50 = 1$ ✓
+        </span>
+      </div>
+    </div>
+    <div class="hbox" style="margin-top:0.5em; font-size:0.9em;">
+      $P(\text{"the cat sat"}) = P(\text{the}\mid\langle s\rangle)\cdot P(\text{cat}\mid\text{the})\cdot P(\text{sat}\mid\text{cat})\cdot P(\langle/s\rangle\mid\text{sat})$
+      $= 1.00 \times 0.67 \times 0.50 \times 1.00 = 0.333$
+    </div>
+  </div>
+</section>
+
+<!-- 1.6 — Sparsity problem -->
+<section>
+  <h2>The sparsity problem</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox red" style="margin-bottom:0.55em;">
+      <strong>Zero-count problem.</strong>
+      If a bigram $(u, w)$ never appears in the training corpus, MLE assigns $\hat{P}(w \mid u) = 0$.
+      A single zero anywhere in the product kills the entire sentence probability:
+      $$P(w_1 \cdots w_T) = \prod_t \hat{P}(w_t \mid w_{t-1}) = 0 \quad \text{if any factor is 0}$$
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">How bad is it in practice?</div>
+        For a vocabulary of $|V| = 50{,}000$, the number of possible bigrams is $50{,}000^2 = 2.5 \times 10^9$.
+        <br/><br/>
+        A corpus of 1 billion words contains at most $10^9$ bigram tokens — fewer bigram <em>types</em>.
+        <br/><br/>
+        Most bigrams will never be observed, even in large corpora.
+        For trigrams the situation is dramatically worse.
+        <br/><br/>
+        <span style="color:var(--text-dim);">This is the <strong>curse of dimensionality</strong> applied to language.</span>
+      </div>
+      <div>
+        <div class="card gold" style="margin-bottom:0.5em;">
+          <div class="card-title">Concrete example</div>
+          Training corpus does not contain "ate the telescope".
+          <br/>
+          Test sentence: "The astronomer ate the telescope cake."
+          <br/>
+          → $P = 0$. The model cannot evaluate this sentence at all.
+        </div>
+        <div class="hbox navy">
+          <strong>Consequence:</strong> raw MLE is unusable for evaluation (perplexity = $\infty$) and generation (dead ends).
+          We need <em>smoothing</em>.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.7 — Laplace smoothing derivation -->
+<section>
+  <h2>Laplace (add-$\alpha$) smoothing</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      <strong>Idea:</strong> pretend we observed every possible n-gram at least $\alpha$ times (a <em>pseudocount</em>).
+      $$\hat{P}_{\alpha}(w \mid u) = \frac{C(u, w) + \alpha}{C(u) + \alpha\,|V|}$$
+      where $|V|$ is the vocabulary size and $\alpha > 0$ (typically $\alpha = 1$ for add-one smoothing).
+    </div>
+    <div class="cols cols-2" style="font-size:0.88em;">
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Properties</div>
+        <ul>
+          <li>$\hat{P}_\alpha(w \mid u) > 0$ for all $w, u$ — no more zeros</li>
+          <li>$\displaystyle\sum_{w \in V} \hat{P}_\alpha(w \mid u) = 1$ — still a valid distribution</li>
+          <li>As $C(u, w) \to \infty$, $\hat{P}_\alpha \to \hat{P}_\text{MLE}$ — recovers MLE for frequent n-grams</li>
+          <li>As $\alpha \to 0$, recovers MLE; as $\alpha \to \infty$, approaches uniform distribution</li>
+        </ul>
+      </div>
+      <div>
+        <div class="card navy" style="margin-bottom:0.5em;">
+          <div class="card-title">Worked example ($|V| = 6$, $\alpha = 1$)</div>
+          Same corpus as before. For the unseen bigram $(\text{dog, ate})$:
+          <br/>
+          $\hat{P}_1(\text{ate}\mid\text{dog}) = \dfrac{0 + 1}{1 + 6} = \dfrac{1}{7} \approx 0.14$
+          <br/><br/>
+          For the seen bigram $(\text{the, cat})$:
+          <br/>
+          $\hat{P}_1(\text{cat}\mid\text{the}) = \dfrac{2 + 1}{3 + 6} = \dfrac{3}{9} = 0.33$
+          <br/>
+          <span style="color:var(--text-dim);">(was 0.67 under MLE — smoothing shifts mass from frequent to rare)</span>
+        </div>
+        <div class="hbox red" style="font-size:0.9em;">
+          <strong>Limitation:</strong> add-one smoothing is too aggressive for large vocabularies — it steals too much mass from observed n-grams.
+          Better: Kneser-Ney smoothing (out of scope here).
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.8 — Perplexity definition -->
+<section>
+  <h2>Evaluating a language model — Perplexity</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Given two models, how do we decide which is better? We need a scalar evaluation metric on held-out data.
+    </p>
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      <strong>Definition.</strong> The perplexity of a language model $P$ on a test sequence $w_1 \cdots w_N$ is:
+      $$\text{PPL}(P, W) = P(w_1, \ldots, w_N)^{-1/N} = \exp\!\left(-\frac{1}{N}\sum_{t=1}^{N} \log P(w_t \mid w_{t-n+1}^{t-1})\right)$$
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">Intuition — branching factor</div>
+        PPL = $k$ means the model is, on average, as uncertain at each step as if it had to choose uniformly
+        from $k$ equally probable words.
+        <br/><br/>
+        A random model over a vocabulary of $|V|$ types has PPL $= |V|$.
+        <br/><br/>
+        A perfect model that knows the next word with certainty has PPL $= 1$.
+        <br/><br/>
+        <span style="color:var(--text-dim);">Lower PPL = model assigns higher probability to the test data = better model.</span>
+      </div>
+      <div class="card navy">
+        <div class="card-title">Connection to cross-entropy</div>
+        Cross-entropy of model $q$ with respect to true distribution $p$:
+        $$H(p, q) = -\frac{1}{N}\sum_{t=1}^{N} \log_2 q(w_t \mid \text{ctx})$$
+        Then:
+        $$\text{PPL} = 2^{H(p,q)}$$
+        PPL is just exponentiated cross-entropy (base 2).
+        Minimising cross-entropy $\equiv$ minimising PPL.
+        <br/><br/>
+        <span style="color:var(--text-dim);">This is also why NLL loss in neural LMs and PPL are the same objective.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.9 — Perplexity worked example -->
+<section>
+  <h2>Perplexity — worked example</h2>
+  <div style="font-size:0.78em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Two bigram models evaluated on the test sentence: <em>"the dog sat"</em> ($N = 3$ predicted tokens + EOS).
+    </p>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div>
+        <div class="card gold" style="margin-bottom:0.5em;">
+          <div class="card-title">Model A — trained on dogs</div>
+          $P(\text{dog}\mid\text{the}) = 0.80$ &nbsp; $\log = -0.22$<br/>
+          $P(\text{sat}\mid\text{dog}) = 0.60$ &nbsp; $\log = -0.51$<br/>
+          $P(\langle/s\rangle\mid\text{sat}) = 0.90$ &nbsp; $\log = -0.11$<br/>
+          <br/>
+          $\sum \log P = -0.84$<br/>
+          $\text{PPL}_A = \exp\!\left(\dfrac{0.84}{3}\right) = \exp(0.28) \approx \mathbf{1.32}$
+        </div>
+        <div class="card red">
+          <div class="card-title">Model B — trained on cats</div>
+          $P(\text{dog}\mid\text{the}) = 0.05$ &nbsp; $\log = -3.00$<br/>
+          $P(\text{sat}\mid\text{dog}) = 0.10$ &nbsp; $\log = -2.30$<br/>
+          $P(\langle/s\rangle\mid\text{sat}) = 0.80$ &nbsp; $\log = -0.22$<br/>
+          <br/>
+          $\sum \log P = -5.52$<br/>
+          $\text{PPL}_B = \exp\!\left(\dfrac{5.52}{3}\right) = \exp(1.84) \approx \mathbf{6.30}$
+        </div>
+      </div>
+      <div>
+        <div class="hbox" style="margin-bottom:0.5em;">
+          Model A has PPL $\approx 1.3$: it is barely surprised by "the dog sat". Effectively 1.3 equally plausible choices at each step.
+          <br/><br/>
+          Model B has PPL $\approx 6.3$: it is much more uncertain, as if choosing from ~6 options each time.
+        </div>
+        <div class="hbox gold">
+          <strong>Benchmark values on AG News:</strong><br/>
+          Unigram: PPL $\approx 1{,}500$–$2{,}500$<br/>
+          Bigram: PPL $\approx 300$–$500$<br/>
+          Trigram: PPL $\approx 150$–$250$<br/>
+          <span style="color:var(--text-dim); font-size:0.9em;">(Laplace smoothed, min_freq=2)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.10 — Text generation -->
+<section>
+  <h2>Text generation from an n-gram LM</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      A language model is not just an evaluator — it defines a generative process.
+    </p>
+    <div class="cols cols-2" style="font-size:0.88em;">
+      <div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">Greedy generation (argmax)</div>
+          At each step $t$, pick the single most probable next word:
+          $$w_t^* = \arg\max_{w \in V} P(w \mid w_{t-n+1}, \ldots, w_{t-1})$$
+          <span style="color:var(--text-dim);">Fast, but often produces repetitive, generic output — it finds the mode, not diverse text.</span>
+        </div>
+        <div class="card gold">
+          <div class="card-title">Sampling with temperature $\tau$</div>
+          Draw $w_t$ from:
+          $$P_\tau(w \mid \text{ctx}) = \frac{\exp\!\left(\log P(w \mid \text{ctx}) / \tau\right)}{\sum_{w'} \exp\!\left(\log P(w' \mid \text{ctx}) / \tau\right)}$$
+          $\tau < 1$: sharper distribution (more deterministic)<br/>
+          $\tau = 1$: original distribution<br/>
+          $\tau > 1$: flatter distribution (more random)
+        </div>
+      </div>
+      <div class="card navy">
+        <div class="card-title">Generation algorithm</div>
+        <div class="step-row" style="font-size:0.95em;">
+          <div class="step-num">1</div>
+          <div>Initialise context $= (\langle s\rangle, \ldots, \langle s\rangle)$ of length $n-1$.</div>
+        </div>
+        <div class="step-row" style="font-size:0.95em;">
+          <div class="step-num">2</div>
+          <div>Sample next token $w_t \sim P_\tau(\cdot \mid \text{context})$.</div>
+        </div>
+        <div class="step-row" style="font-size:0.95em;">
+          <div class="step-num">3</div>
+          <div>Append $w_t$ to output. Slide context window: drop oldest token, add $w_t$.</div>
+        </div>
+        <div class="step-row" style="font-size:0.95em;">
+          <div class="step-num">4</div>
+          <div>Stop when $\langle/s\rangle$ is sampled or max length is reached.</div>
+        </div>
+        <div style="margin-top:0.6em; color:var(--text-dim); font-size:0.9em;">
+          You will implement this in TP02 Part 5.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 1.11 — Limits of n-gram LMs -->
+<section>
+  <h2>Limits of n-gram LMs</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox red" style="margin-bottom:0.5em;">
+      <strong>Fixed context window.</strong>
+      By construction, an n-gram model cannot use any information from more than $n-1$ positions back.
+      Long-range syntactic and semantic dependencies are invisible.
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Example — subject-verb agreement</div>
+        <em>"The keys to the cabinet <strong>are</strong> on the table."</em>
+        <br/><br/>
+        The subject is "keys" (plural), not "cabinet" (singular).
+        A bigram or trigram model sees only "cabinet are" — it cannot resolve the agreement correctly.
+        <br/><br/>
+        GPT-3 handles this because its context is thousands of tokens long.
+      </div>
+      <div class="card gold">
+        <div class="card-title">Sparsity vs context trade-off</div>
+        Larger $n$ → longer context → better model quality<br/>
+        Larger $n$ → exponentially more n-gram types → worse coverage
+        <br/><br/>
+        In practice $n \leq 5$ for count-based models.
+        Beyond that, almost every n-gram appears at most once — smoothing dominates.
+        <br/><br/>
+        <span style="color:var(--text-dim);">Neural LMs (Session 5+) solve this by learning <em>dense representations</em> of context rather than counting.</span>
+      </div>
+    </div>
+    <div class="hbox" style="margin-top:0.5em; font-size:0.9em;">
+      N-gram LMs are still used in production ASR and MT systems as a <em>rescoring</em> component alongside neural models.
+      They are fast, interpretable, and require no training hardware.
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 02 -->
+<section class="section-slide">
+  <span class="section-num">02</span>
+  <h2>Naive Bayes</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">
+    A generative classifier from Bayes' theorem.
+  </p>
+</section>
+
+<section>
+  <h2>Two families of classifiers</h2>
+  <div class="cols cols-2" style="font-size:0.78em; margin-top:0.3em;">
+    <div class="card gold">
+      <div class="card-title">Generative models</div>
+      Model the <em>joint</em> distribution $P(x, y) = P(x \mid y)\,P(y)$.
+      <br/><br/>
+      "How likely is this document to have been generated by class $y$?"
+      <br/><br/>
+      <strong>Naive Bayes</strong> is the canonical example.
+      <br/>
+      <span style="color:var(--text-dim);">Also: HMMs, LDAs, language models themselves.</span>
+    </div>
+    <div class="card navy">
+      <div class="card-title">Discriminative models</div>
+      Model the <em>conditional</em> distribution $P(y \mid x)$ directly.
+      <br/><br/>
+      "What is the probability of label $y$ given this document?"
+      <br/><br/>
+      <strong>Logistic Regression</strong> is the canonical example.
+      <br/>
+      <span style="color:var(--text-dim);">Also: SVMs, neural networks, Transformers.</span>
+    </div>
+  </div>
+  <div class="hbox" style="font-size:0.72em; margin-top:0.6em;">
+    <strong>In practice:</strong> discriminative models tend to outperform generative ones
+    when labelled data is plentiful. Generative models are useful when data is scarce
+    or interpretability matters.
+  </div>
+</section>
+
+<section>
+  <h2>Bayes' theorem — the foundation</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox gold" style="margin-bottom:0.6em;">
+      $$P(y \mid x) = \frac{P(x \mid y)\,P(y)}{P(x)}$$
+      <br/>
+      <span style="color:var(--text-dim); font-size:0.9em;">
+        posterior $\propto$ likelihood $\times$ prior
+      </span>
+    </div>
+    <div class="cols cols-3" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">$P(y)$ — Prior</div>
+        How frequent is class $y$ in the training set?
+        <br/>Estimated from label frequencies.
+      </div>
+      <div class="card gold">
+        <div class="card-title">$P(x \mid y)$ — Likelihood</div>
+        How likely is document $x$ given it belongs to class $y$?
+        <br/>This is where the "model" lives.
+      </div>
+      <div class="card navy">
+        <div class="card-title">$P(x)$ — Evidence</div>
+        Same for all classes. We can ignore it when comparing $P(y_1 \mid x)$ vs $P(y_2 \mid x)$.
+      </div>
+    </div>
+    <div class="hbox" style="margin-top:0.5em; font-size:0.9em;">
+      Classification rule:
+      $$\hat{y} = \arg\max_y P(y \mid x) = \arg\max_y\; P(x \mid y)\,P(y)$$
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The naive independence assumption</h2>
+  <div style="font-size:0.80em;">
+    <p>Document $x$ is a sequence of words $(w_1, \ldots, w_T)$.
+    Computing $P(x \mid y)$ exactly requires modelling all word interactions — intractable.</p>
+    <div class="hbox red" style="margin: 0.5em 0;">
+      <strong>Naive Bayes assumption:</strong> given the class $y$,
+      all words are <em>conditionally independent</em>.
+      $$P(x \mid y) = \prod_{i=1}^{T} P(w_i \mid y)$$
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card red">
+        <div class="card-title">Why naive?</div>
+        Word order is completely ignored.
+        <br/>"dog bites man" = "man bites dog"
+        <br/><br/>
+        Strong correlations between words are ignored.
+        <br/><span style="color:var(--text-dim);">"New York" treated as two independent tokens.</span>
+      </div>
+      <div class="card green">
+        <div class="card-title">Why does it still work?</div>
+        Classification only needs to rank classes, not estimate exact probabilities.
+        <br/><br/>
+        Even with wrong probability estimates, the <em>argmax</em> is often correct.
+        <br/><span style="color:var(--text-dim);">Surprisingly competitive on text classification.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>MLE for Naive Bayes</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      Two sets of parameters to estimate from the training data:
+    </p>
+    <div class="cols cols-2">
+      <div>
+        <div class="card gold" style="margin-bottom:0.4em;">
+          <div class="card-title">Class prior $\hat{P}(y)$</div>
+          $$\hat{P}(y = c) = \frac{N_c}{N}$$
+          where $N_c$ = documents in class $c$, $N$ = total documents.
+        </div>
+        <div class="card" style="margin-bottom:0.4em;">
+          <div class="card-title">Word likelihood $\hat{P}(w \mid y)$</div>
+          $$\hat{P}(w \mid y=c) = \frac{\text{count}(w, c)}{\sum_{w'} \text{count}(w', c)}$$
+          <br/>
+          <span style="color:var(--text-dim); font-size:0.9em;">
+            Number of times word $w$ appears in class $c$ docs,
+            divided by total words in class $c$ docs.
+          </span>
+        </div>
+      </div>
+      <div>
+        <div class="card navy">
+          <div class="card-title">Laplace smoothing for NB</div>
+          Zero counts kill the product. Add-1 smoothing:
+          $$\hat{P}(w \mid y=c) = \frac{\text{count}(w, c) + 1}{\sum_{w'} \text{count}(w', c) + |V|}$$
+          <br/>
+          <span style="color:var(--text-dim); font-size:0.9em;">
+            Same idea as for n-gram LMs. Every word gets at least one pseudocount.
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Working in log-space</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox red" style="margin-bottom:0.5em;">
+      <strong>Numerical underflow.</strong> Multiplying many small probabilities:
+      $$P(x \mid y) = \prod_{i=1}^{T} P(w_i \mid y)$$
+      For $T=100$ words with $P \approx 0.001$, this is $10^{-300}$ — underflows to 0 in float64.
+    </div>
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      <strong>Solution: work in log-space.</strong>
+      $$\log P(y \mid x) \propto \log P(y) + \sum_{i=1}^{T} \log P(w_i \mid y)$$
+      Products become sums. No underflow. Classification rule unchanged (argmax is monotone).
+    </div>
+    <div class="card" style="font-size:0.9em;">
+      <div class="card-title">Implementation pattern</div>
+      <pre><code class="python">log_prior = np.log(class_priors)           # shape (C,)
+log_likelihood = X @ log_word_probs.T     # shape (N, C)  — bag of words dot log-probs
+log_posterior = log_likelihood + log_prior
+y_pred = np.argmax(log_posterior, axis=1)</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ SECTION 03 -->
+<section class="section-slide">
+  <span class="section-num">03</span>
+  <h2>Logistic Regression</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">
+    A discriminative model. Model $P(y \mid x)$ directly.
+  </p>
+</section>
+
+<section>
+  <h2>From score to probability — the sigmoid</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      We want to output a probability in $[0, 1]$. Start with a linear score.
+    </p>
+    <div class="cols cols-2">
+      <div>
+        <div class="card gold" style="margin-bottom:0.5em;">
+          <div class="card-title">Linear score</div>
+          $$z = \mathbf{w}^\top \mathbf{x} + b$$
+          $\mathbf{x} \in \mathbb{R}^V$ (bag-of-words or TF-IDF vector),
+          $\mathbf{w} \in \mathbb{R}^V$ (weight vector), $b \in \mathbb{R}$ (bias).
+          <br/><br/>
+          $z$ is unbounded — it can be any real number.
+        </div>
+        <div class="card">
+          <div class="card-title">Logistic (sigmoid) function</div>
+          $$\sigma(z) = \frac{1}{1 + e^{-z}} \in (0, 1)$$
+          $$P(y=1 \mid \mathbf{x}) = \sigma(\mathbf{w}^\top \mathbf{x} + b)$$
+        </div>
+      </div>
+      <div class="card navy">
+        <div class="card-title">Why sigmoid?</div>
+        It is the unique function satisfying:
+        <ul>
+          <li>Maps $\mathbb{R} \to (0,1)$</li>
+          <li>Monotone (preserves ordering)</li>
+          <li>Differentiable everywhere</li>
+          <li>$\sigma(-z) = 1 - \sigma(z)$ (symmetric)</li>
+        </ul>
+        <br/>
+        <span style="color:var(--text-dim);">
+          It also arises naturally from the log-odds formulation:
+          $\log \frac{P(y=1)}{P(y=0)} = \mathbf{w}^\top \mathbf{x}$ implies $P(y=1) = \sigma(\mathbf{w}^\top \mathbf{x})$.
+        </span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Multi-class — the softmax</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      For $C > 2$ classes, replace sigmoid with softmax.
+    </p>
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      $$P(y = c \mid \mathbf{x}) = \frac{e^{\mathbf{w}_c^\top \mathbf{x} + b_c}}{\displaystyle\sum_{c'=1}^{C} e^{\mathbf{w}_{c'}^\top \mathbf{x} + b_{c'}}}$$
+      <br/>
+      <span style="color:var(--text-dim); font-size:0.9em;">
+        One weight vector $\mathbf{w}_c$ per class. Outputs sum to 1.
+      </span>
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">AG News: 4 classes</div>
+        $\mathbf{W} \in \mathbb{R}^{4 \times V}$ — one row per class.
+        <br/>
+        $\mathbf{z} = \mathbf{W}\mathbf{x} + \mathbf{b} \in \mathbb{R}^4$
+        <br/>
+        $\hat{\mathbf{p}} = \text{softmax}(\mathbf{z}) \in \mathbb{R}^4$
+        <br/>
+        $\hat{y} = \arg\max_c \hat{p}_c$
+      </div>
+      <div class="card navy">
+        <div class="card-title">Numerical stability</div>
+        Never compute $e^z$ directly — overflow.
+        <br/>Subtract the max first:
+        <br/>
+        $\text{softmax}(\mathbf{z})_c = \frac{e^{z_c - \max \mathbf{z}}}{\sum_{c'} e^{z_{c'} - \max \mathbf{z}}}$
+        <br/>
+        <span style="color:var(--text-dim);">This is what scipy/PyTorch do internally.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The loss function — cross-entropy</h2>
+  <div style="font-size:0.80em;">
+    <p style="color:var(--text-dim); margin-bottom:0.4em;">
+      We need a scalar to minimise. It must penalise wrong or uncertain predictions.
+    </p>
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      <strong>Negative log-likelihood (= cross-entropy loss) for one example:</strong>
+      $$\mathcal{L}(\mathbf{w}) = -\log P(y^* \mid \mathbf{x}) = -\log \hat{p}_{y^*}$$
+      where $y^*$ is the true label.
+    </div>
+    <div class="cols cols-2" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">Why NLL?</div>
+        It is the maximum likelihood criterion: maximising
+        $\prod_i P(y_i \mid \mathbf{x}_i)$ over the dataset is equivalent
+        to minimising $-\sum_i \log P(y_i \mid \mathbf{x}_i)$.
+        <br/><br/>
+        Also: penalises confident wrong predictions very heavily.
+        $-\log(0.01) \approx 4.6$ vs $-\log(0.99) \approx 0.01$.
+      </div>
+      <div class="card navy">
+        <div class="card-title">Batch loss</div>
+        $$\mathcal{L} = -\frac{1}{N}\sum_{i=1}^{N} \log P(y_i \mid \mathbf{x}_i)$$
+        Average over the training set.
+        Add L2 regularisation to avoid overfitting:
+        $$\mathcal{L}_{\text{reg}} = \mathcal{L} + \frac{\lambda}{2}\|\mathbf{w}\|^2$$
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Gradient derivation — binary case</h2>
+  <div style="font-size:0.76em;">
+    <p style="color:var(--text-dim); margin-bottom:0.3em;">
+      Derive $\nabla_{\mathbf{w}} \mathcal{L}$ for binary LR. The result is elegant.
+    </p>
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div>
+        Loss for one example: $\mathcal{L} = -[y \log \hat{p} + (1-y)\log(1-\hat{p})]$, &nbsp;
+        $\hat{p} = \sigma(z)$, &nbsp; $z = \mathbf{w}^\top \mathbf{x}$
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div>
+        Chain rule: $\dfrac{\partial \mathcal{L}}{\partial \mathbf{w}} = \dfrac{\partial \mathcal{L}}{\partial \hat{p}} \cdot \dfrac{\partial \hat{p}}{\partial z} \cdot \dfrac{\partial z}{\partial \mathbf{w}}$
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div>
+        $\dfrac{\partial \mathcal{L}}{\partial \hat{p}} = -\dfrac{y}{\hat{p}} + \dfrac{1-y}{1-\hat{p}}$
+        &nbsp;&nbsp;
+        $\dfrac{\partial \hat{p}}{\partial z} = \sigma(z)(1-\sigma(z)) = \hat{p}(1-\hat{p})$
+        &nbsp;&nbsp;
+        $\dfrac{\partial z}{\partial \mathbf{w}} = \mathbf{x}$
+      </div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div>
+        Multiplying out: $\dfrac{\partial \mathcal{L}}{\partial \mathbf{w}} = (\hat{p} - y)\,\mathbf{x}$
+      </div>
+    </div>
+    <div class="hbox gold" style="margin-top:0.5em;">
+      <strong>Final result:</strong>
+      $$\nabla_{\mathbf{w}} \mathcal{L} = (\hat{p} - y)\,\mathbf{x}$$
+      The gradient is simply the prediction error scaled by the input.
+      This is why logistic regression is so well-behaved numerically.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Gradient descent</h2>
+  <div style="font-size:0.80em;">
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      <strong>Update rule (batch gradient descent):</strong>
+      $$\mathbf{w} \leftarrow \mathbf{w} - \eta \cdot \frac{1}{N}\sum_{i=1}^{N} (\hat{p}_i - y_i)\,\mathbf{x}_i$$
+      where $\eta > 0$ is the learning rate.
+    </div>
+    <div class="cols cols-3" style="font-size:0.9em;">
+      <div class="card">
+        <div class="card-title">Batch GD</div>
+        Use all $N$ examples per update.
+        <br/>Stable. Slow for large datasets.
+      </div>
+      <div class="card gold">
+        <div class="card-title">Stochastic GD (SGD)</div>
+        One example per update.
+        <br/>Noisy. Fast. Can escape local minima.
+      </div>
+      <div class="card navy">
+        <div class="card-title">Mini-batch SGD</div>
+        $B$ examples per update.
+        <br/>Best of both. Standard in practice.
+        <br/>
+        <span style="color:var(--text-dim);">Also what sklearn does internally.</span>
+      </div>
+    </div>
+    <div class="hbox" style="margin-top:0.5em; font-size:0.9em;">
+      <strong>In practice:</strong> <code>sklearn.linear_model.LogisticRegression</code>
+      uses L-BFGS by default — a second-order optimiser.
+      You do not need to implement GD yourself,
+      but you must understand what it is minimising and why.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>NB vs Logistic Regression — comparison</h2>
+  <table class="cmp-table">
+    <thead>
+      <tr>
+        <th>Property</th>
+        <th>Naive Bayes</th>
+        <th>Logistic Regression</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Type</td>
+        <td>Generative</td>
+        <td>Discriminative</td>
+      </tr>
+      <tr>
+        <td>What is modelled</td>
+        <td>$P(x, y) = P(x\mid y)\,P(y)$</td>
+        <td>$P(y \mid x)$ directly</td>
+      </tr>
+      <tr>
+        <td>Independence assumption</td>
+        <td>Yes — features are independent given class</td>
+        <td>No</td>
+      </tr>
+      <tr>
+        <td>Training</td>
+        <td>Count and normalise — closed form</td>
+        <td>Gradient descent — iterative</td>
+      </tr>
+      <tr>
+        <td>Small data</td>
+        <td>Good — fewer parameters to estimate</td>
+        <td>Worse — more prone to overfitting</td>
+      </tr>
+      <tr class="highlight">
+        <td>Large data</td>
+        <td>Plateaus</td>
+        <td>Keeps improving</td>
+      </tr>
+      <tr>
+        <td>Interpretability</td>
+        <td>High — word likelihoods are meaningful</td>
+        <td>Moderate — weights indicate feature importance</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="hbox" style="font-size:0.7em; margin-top:0.5em;">
+    For AG News, expect NB to achieve ~88-90% accuracy, LR ~91-93%.
+    Both crush the majority baseline (~25%).
+  </div>
+</section>
+
+<!-- ═══════════════════════════════════════════════════════ TP BRIDGE -->
+<section class="section-slide">
+  <span class="section-num">TP</span>
+  <h2>TP02 — N-gram Language Models</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">
+    Build, train, evaluate, and generate text with n-gram LMs on AG News.
+  </p>
+</section>
+
+<section>
+  <h2>TP02 — roadmap</h2>
+  <div style="font-size:0.80em;">
+    <div class="step-row">
+      <div class="step-num">1</div>
+      <div><strong>Corpus statistics.</strong> Load the AG News splits from TP01. Count unigrams and bigrams. Verify Zipf still holds after preprocessing.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">2</div>
+      <div><strong>N-gram model class.</strong> Implement <code>NgramLM</code> with <code>fit</code>, <code>log_prob</code>, <code>perplexity</code>. Support $n = 1, 2, 3$.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">3</div>
+      <div><strong>Laplace smoothing.</strong> Add smoothing. Verify perplexity drops on unseen n-grams.</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">4</div>
+      <div><strong>Evaluation.</strong> Compare PPL across $n=1,2,3$ and across AG News classes. Which class is most predictable?</div>
+    </div>
+    <div class="step-row">
+      <div class="step-num">5</div>
+      <div><strong>Text generation.</strong> Implement temperature-sampled generation. Generate class-conditioned sentences.</div>
+    </div>
+    <div class="hbox gold" style="margin-top:0.5em;">
+      <strong>Homework (before Session 3):</strong>
+      Implement Naive Bayes from scratch. Train on AG News. Report macro F1.
+      Compare to the majority baseline. Bring your results.
+    </div>
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    progress: true,
+    center: true,
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    width: 1200,
+    height: 700,
+    margin: 0.06,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+</script>
+</body>
+</html>
