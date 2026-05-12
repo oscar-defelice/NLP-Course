@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Session 03 — Naive Bayes & Logistic Regression</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css"/>
+<style>
+:root {
+  --bg:      #0d1117;
+  --surface: #161b22;
+  --border:  #30363d;
+  --text:    #e6edf3;
+  --text-dim:#8b949e;
+  --mint:    #39d353;
+  --mint-dim:#1a3622;
+  --gold:    #d29922;
+  --gold-dim:#271d04;
+  --blue:    #58a6ff;
+  --blue-dim:#0d2044;
+  --red:     #f85149;
+  --red-dim: #3d0c09;
+  --purple:  #bc8cff;
+  --purple-dim:#1e0f3a;
+  --orange:  #e3b341;
+}
+
+.reveal { background: var(--bg); font-family: 'DM Sans', sans-serif; color: var(--text); }
+.reveal h1 { font-family: 'DM Serif Display', serif; font-size: 1.9em; color: var(--text); line-height: 1.15; }
+.reveal h2 { font-family: 'DM Serif Display', serif; font-size: 1.25em; color: var(--text); margin-bottom: 0.5em; }
+.reveal h3 { font-size: 0.82em; font-weight: 600; color: var(--mint); letter-spacing: 0.06em; text-transform: uppercase; margin-bottom: 0.3em; }
+.reveal pre { font-size: 0.62em !important; background: #010409; border: 1px solid var(--border); border-radius: 6px; margin: 0.4em 0; }
+.reveal code { font-family: 'DM Mono', monospace; font-size: 0.88em; color: var(--mint); background: transparent; }
+.reveal section { text-align: left; padding: 0.3em 1em; box-sizing: border-box; }
+.reveal .slides { height: 100%; }
+.reveal p { font-size: 0.78em; line-height: 1.55; margin: 0.3em 0; }
+.reveal ul { font-size: 0.78em; line-height: 1.6; margin: 0.3em 0 0.3em 1em; }
+.reveal li { margin-bottom: 0.2em; }
+
+/* ── Layout helpers ─────────────────────────────────────────────────── */
+.cols { display: grid; gap: 0.8em; }
+.cols-2 { grid-template-columns: 1fr 1fr; }
+.cols-3 { grid-template-columns: 1fr 1fr 1fr; }
+.cols-6040 { grid-template-columns: 1.5fr 1fr; }
+.cols-4060 { grid-template-columns: 1fr 1.5fr; }
+
+/* ── Cards ──────────────────────────────────────────────────────────── */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.55em 0.75em;
+  font-size: 0.76em;
+}
+.card-mint  { border-color: var(--mint);   background: var(--mint-dim); }
+.card-gold  { border-color: var(--gold);   background: var(--gold-dim); }
+.card-blue  { border-color: var(--blue);   background: var(--blue-dim); }
+.card-red   { border-color: var(--red);    background: var(--red-dim);  }
+.card-purple{ border-color: var(--purple); background: var(--purple-dim); }
+.card-title { font-weight: 600; color: var(--mint); margin-bottom: 0.3em; font-size: 1.0em; }
+.card-gold  .card-title { color: var(--gold); }
+.card-blue  .card-title { color: var(--blue); }
+.card-red   .card-title { color: var(--red); }
+.card-purple .card-title { color: var(--purple); }
+
+/* ── Highlight boxes ────────────────────────────────────────────────── */
+.hbox {
+  border-left: 3px solid var(--mint);
+  background: var(--mint-dim);
+  padding: 0.4em 0.7em;
+  border-radius: 0 6px 6px 0;
+  font-size: 0.75em;
+  margin: 0.4em 0;
+  line-height: 1.5;
+}
+.hbox-gold   { border-color: var(--gold);   background: var(--gold-dim); }
+.hbox-blue   { border-color: var(--blue);   background: var(--blue-dim); }
+.hbox-red    { border-color: var(--red);    background: var(--red-dim);  }
+.hbox-purple { border-color: var(--purple); background: var(--purple-dim); }
+
+/* ── Section title slides ───────────────────────────────────────────── */
+.section-slide { text-align: center !important; display: flex !important; flex-direction: column !important; justify-content: center !important; align-items: center !important; }
+.section-slide h2 { font-size: 1.7em; }
+.section-num { font-family: 'DM Mono', monospace; font-size: 0.45em; color: var(--mint); letter-spacing: 0.3em; margin-bottom: 0.3em; }
+.rule { height: 1px; background: var(--border); margin: 0.5em 0; }
+
+/* ── Bag of words visual ────────────────────────────────────────────── */
+.bow-row { display: flex; flex-wrap: wrap; gap: 0.3em; margin: 0.3em 0; }
+.tok { display: inline-block; background: var(--surface); border: 1px solid var(--border); border-radius: 4px; padding: 0.15em 0.45em; font-family: 'DM Mono', monospace; font-size: 0.72em; color: var(--text); }
+.tok-pos { border-color: var(--mint); color: var(--mint); background: var(--mint-dim); }
+.tok-neg { border-color: var(--red); color: var(--red); background: var(--red-dim); }
+.tok-neu { border-color: var(--text-dim); color: var(--text-dim); }
+
+/* ── Formula display ────────────────────────────────────────────────── */
+.formula {
+  font-family: 'DM Mono', monospace;
+  font-size: 0.8em;
+  background: #010409;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 0.5em 0.8em;
+  margin: 0.4em 0;
+  color: var(--orange);
+  overflow-x: auto;
+}
+.formula em { color: var(--blue); font-style: normal; }
+.formula strong { color: var(--mint); }
+
+/* ── Step rows ──────────────────────────────────────────────────────── */
+.step-row { display: flex; align-items: flex-start; gap: 0.7em; margin-bottom: 0.45em; font-size: 0.76em; }
+.step-num { min-width: 1.6em; height: 1.6em; border-radius: 50%; background: var(--mint-dim); border: 1.5px solid var(--mint); color: var(--mint); font-family: 'DM Mono', monospace; font-size: 0.85em; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+
+/* ── Table ──────────────────────────────────────────────────────────── */
+.tbl { width: 100%; border-collapse: collapse; font-size: 0.72em; font-family: 'DM Mono', monospace; }
+.tbl th { color: var(--text-dim); border-bottom: 1px solid var(--border); padding: 0.3em 0.5em; text-align: left; font-weight: 500; }
+.tbl td { padding: 0.3em 0.5em; border-bottom: 1px dashed var(--border); }
+.tbl .hi { color: var(--mint); }
+.tbl .lo { color: var(--red); }
+
+/* ── Comparison badge ───────────────────────────────────────────────── */
+.badge { display: inline-block; border-radius: 4px; padding: 0.1em 0.5em; font-size: 0.72em; font-family: 'DM Mono', monospace; font-weight: 500; }
+.badge-g { background: var(--mint-dim); color: var(--mint); border: 1px solid var(--mint); }
+.badge-r { background: var(--red-dim);  color: var(--red);  border: 1px solid var(--red); }
+
+/* ── Decision boundary visual ───────────────────────────────────────── */
+.db-row { display: flex; gap: 0.5em; align-items: center; margin: 0.2em 0; font-size: 0.74em; }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ════════════════════════════════════════════ TITLE -->
+<section>
+  <div style="font-family:'DM Mono',monospace; font-size:0.38em; color:var(--text-dim); letter-spacing:0.15em; text-transform:uppercase; margin-bottom:0.7em;">
+    Natural Language Processing · Session 03 / 08
+  </div>
+  <h1>Classical Text Classification</h1>
+  <h3 style="text-transform:none; color:var(--text-dim); font-size:0.8em; margin-top:0.2em; letter-spacing:0;">
+    Bag of Words · Naive Bayes · Logistic Regression
+  </h3>
+  <p style="color:var(--text-dim); font-size:0.52em; margin-top:1.2em;">
+    Oscar de Felice &nbsp;·&nbsp; Head of AI, WhiteLab Genomics
+  </p>
+  <div style="margin-top:1em; display:flex; flex-wrap:wrap; gap:0.4em;">
+    <span style="border:1px solid var(--mint-dim); color:var(--mint); padding:0.15em 0.6em; border-radius:4px; font-family:'DM Mono',monospace; font-size:0.34em; letter-spacing:0.07em;">BoW</span>
+    <span style="border:1px solid var(--mint-dim); color:var(--mint); padding:0.15em 0.6em; border-radius:4px; font-family:'DM Mono',monospace; font-size:0.34em; letter-spacing:0.07em;">Naive Bayes</span>
+    <span style="border:1px solid var(--mint-dim); color:var(--mint); padding:0.15em 0.6em; border-radius:4px; font-family:'DM Mono',monospace; font-size:0.34em; letter-spacing:0.07em;">Laplace smoothing</span>
+    <span style="border:1px solid var(--mint-dim); color:var(--mint); padding:0.15em 0.6em; border-radius:4px; font-family:'DM Mono',monospace; font-size:0.34em; letter-spacing:0.07em;">Logistic regression</span>
+    <span style="border:1px solid var(--mint-dim); color:var(--mint); padding:0.15em 0.6em; border-radius:4px; font-family:'DM Mono',monospace; font-size:0.34em; letter-spacing:0.07em;">Gradient descent</span>
+    <span style="border:1px solid var(--mint-dim); color:var(--mint); padding:0.15em 0.6em; border-radius:4px; font-family:'DM Mono',monospace; font-size:0.34em; letter-spacing:0.07em;">Regularisation</span>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ AGENDA -->
+<section>
+  <h2>Today — ~60 min theory</h2>
+  <div class="cols cols-2" style="font-size:0.76em; margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">00 · Where we are</div>
+        Recap of Session 01: tokenisation, TF-IDF.
+        The benchmark task we will improve on today.
+      </div>
+      <div class="card card-gold" style="margin-bottom:0.55em;">
+        <div class="card-title">01 · Bag of Words</div>
+        Turning a document into a fixed-length vector.
+        What information is kept, what is lost.
+      </div>
+      <div class="card card-mint" style="margin-bottom:0.55em;">
+        <div class="card-title">02 · Naive Bayes</div>
+        Generative classifiers. Bayes' theorem applied to text.
+        The independence assumption, Laplace smoothing, log-probabilities.
+      </div>
+    </div>
+    <div>
+      <div class="card card-blue" style="margin-bottom:0.55em;">
+        <div class="card-title">03 · Logistic Regression</div>
+        Discriminative classifiers. The sigmoid function.
+        Cross-entropy loss. Gradient descent. Regularisation.
+      </div>
+      <div class="card card-purple" style="margin-bottom:0.55em;">
+        <div class="card-title">04 · Generative vs Discriminative</div>
+        When to use which. Asymptotic efficiency.
+        Assumptions and failure modes.
+      </div>
+      <div class="card" style="margin-bottom:0.55em;">
+        <div class="card-title">05 · What's next</div>
+        Where these models fail and why that motivates embeddings.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ SEC 00 RECAP -->
+<section class="section-slide">
+  <span class="section-num">00</span>
+  <h2>Where we are</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Session 01 gave us tools. Today we build classifiers with them.</p>
+</section>
+
+<section>
+  <h2>The pipeline so far</h2>
+  <div class="cols cols-3" style="margin-top:0.3em;">
+    <div class="card card-mint">
+      <div class="card-title">Session 01</div>
+      Raw text → tokens → vocabulary<br/>
+      Normalisation, BPE, TF-IDF.<br/>
+      <span style="color:var(--text-dim);">Majority-class baseline: ~25% F1.</span>
+    </div>
+    <div class="card card-gold">
+      <div class="card-title">Today — Session 03</div>
+      Tokens → BoW vector → class label.<br/>
+      Naive Bayes, Logistic Regression.<br/>
+      <span style="color:var(--text-dim);">Goal: beat the baseline significantly.</span>
+    </div>
+    <div class="card" style="opacity:0.5;">
+      <div class="card-title">Sessions 04–08</div>
+      Embeddings → RNNs → Transformers.<br/>
+      Richer representations, more parameters.
+    </div>
+  </div>
+  <div class="hbox" style="margin-top:0.7em;">
+    <strong>Key idea running through this course:</strong>
+    every session adds a row to the same comparison table on AG News.
+    The arc is always: <em>richer representation → better performance</em>.
+  </div>
+</section>
+
+<section>
+  <h2>Quick recap — what is a classification task?</h2>
+  <p style="font-size:0.75em;">We have a document <strong>d</strong> and want to assign a label <strong>y</strong> from a fixed set C.</p>
+  <div class="cols cols-2" style="margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">Examples from Session 01</div>
+        <div class="bow-row" style="margin-top:0.3em;">
+          <span class="tok-pos">Sports</span>
+          <span class="tok" style="font-size:0.9em;">"Messi scores twice in Champions League final"</span>
+        </div>
+        <div class="bow-row" style="margin-top:0.3em;">
+          <span class="tok-neg">Politics</span>
+          <span class="tok" style="font-size:0.9em;">"Senate passes new climate bill"</span>
+        </div>
+        <div class="bow-row" style="margin-top:0.3em;">
+          <span class="tok" style="border-color:var(--blue); color:var(--blue);">Business</span>
+          <span class="tok" style="font-size:0.9em;">"Apple reports record quarterly revenue"</span>
+        </div>
+        <div class="bow-row" style="margin-top:0.3em;">
+          <span class="tok" style="border-color:var(--purple); color:var(--purple);">Sci/Tech</span>
+          <span class="tok" style="font-size:0.9em;">"New superconductor found at room temperature"</span>
+        </div>
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">AG News benchmark</div>
+        4 classes · ~120,000 training samples<br/>
+        Headlines + short descriptions.<br/>
+        <strong>Majority baseline:</strong> 25% accuracy (random class).<br/>
+        <strong>Human accuracy:</strong> ~96%.<br/>
+        <strong>State of the art:</strong> ~95% (BERT-level).<br/><br/>
+        <em>Today we will reach ~85–90% with a single linear model.</em>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ SEC 01 BAG OF WORDS -->
+<section class="section-slide">
+  <span class="section-num">01</span>
+  <h2>Bag of Words</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Turning a document into a fixed-length numerical vector.</p>
+</section>
+
+<section>
+  <h2>From text to numbers — the core problem</h2>
+  <p style="font-size:0.76em;">Machine learning models work on numbers, not strings. We need a <em>representation</em>.</p>
+  <div class="cols cols-2" style="margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.5em;">
+        <div class="card-title">The problem with raw text</div>
+        <div class="bow-row" style="margin-top:0.3em;">
+          <span class="tok">"cat"</span><span class="tok">"sat"</span><span class="tok">"on"</span><span class="tok">"the"</span><span class="tok">"mat"</span>
+        </div>
+        <p style="margin-top:0.4em;">Variable length, no obvious numeric value,<br/>
+        billions of possible sentences.</p>
+      </div>
+      <div class="card card-mint">
+        <div class="card-title">The BoW idea</div>
+        Forget the <em>order</em>. Just count how many times each
+        vocabulary word appears. One number per word in V.
+      </div>
+    </div>
+    <div>
+      <div class="formula">
+        d = "the cat sat on the mat"<br/>
+        V = {cat, mat, on, sat, the}<br/><br/>
+        <strong>d</strong> = [<em>1</em>, <em>1</em>, <em>1</em>, <em>1</em>, <em>2</em>]<br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;cat mat on sat the
+      </div>
+      <div class="hbox hbox-gold" style="margin-top:0.5em;">
+        <strong>Price we pay:</strong> "the cat sat on the mat"
+        and "the mat sat on the cat"
+        get the <em>same</em> vector.
+        Word order is gone.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>BoW — a worked example with two documents</h2>
+  <div style="font-size:0.75em;">
+    <div class="cols cols-2" style="margin-bottom:0.5em;">
+      <div class="card card-mint">
+        <div class="card-title">D1 — Sports</div>
+        "Liverpool win the title again. Liverpool fans celebrate."
+      </div>
+      <div class="card card-red">
+        <div class="card-title">D2 — Politics</div>
+        "The Prime Minister wins the vote. Fans of the party celebrate."
+      </div>
+    </div>
+    <table class="tbl">
+      <tr>
+        <th>token</th><th>D1 count</th><th>D2 count</th><th>note</th>
+      </tr>
+      <tr><td>liverpool</td><td class="hi">2</td><td>0</td><td>strong Sports signal</td></tr>
+      <tr><td>title</td><td class="hi">1</td><td>0</td><td>weak Sports signal</td></tr>
+      <tr><td>minister</td><td>0</td><td class="hi">1</td><td>strong Politics signal</td></tr>
+      <tr><td>vote</td><td>0</td><td class="hi">1</td><td>strong Politics signal</td></tr>
+      <tr><td>fans</td><td class="hi">1</td><td class="hi">1</td><td>shared — no signal</td></tr>
+      <tr><td>celebrate</td><td class="hi">1</td><td class="hi">1</td><td>shared — no signal</td></tr>
+      <tr><td>the</td><td class="hi">1</td><td class="hi">2</td><td>stop word — no signal</td></tr>
+    </table>
+    <div class="hbox" style="margin-top:0.5em;">
+      Words that appear in all classes carry no discriminative information.
+      This is why TF-IDF (which downweights them) often beats raw counts.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>BoW — what is lost, what is kept</h2>
+  <div class="cols cols-2">
+    <div>
+      <div class="card card-red" style="margin-bottom:0.5em;">
+        <div class="card-title">Information lost</div>
+        <ul>
+          <li><strong>Word order:</strong> "dog bites man" ≡ "man bites dog"</li>
+          <li><strong>Syntax:</strong> "I don't like this" ≡ "I like this don't" (roughly)</li>
+          <li><strong>Negation:</strong> "not good" and "not bad" both contain "not" and a sentiment word</li>
+          <li><strong>Rare words:</strong> hapaxes contribute almost nothing statistically</li>
+        </ul>
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint" style="margin-bottom:0.5em;">
+        <div class="card-title">Information kept</div>
+        <ul>
+          <li><strong>Topic signal:</strong> "goal", "offside", "penalty" → Sports</li>
+          <li><strong>Vocabulary fingerprint:</strong> documents share class-specific jargon</li>
+          <li><strong>Frequency:</strong> extreme counts are informative ("goal" × 5 in 50 words)</li>
+        </ul>
+      </div>
+      <div class="hbox">
+        For many real-world tasks, topic fingerprint is sufficient.
+        BoW is remarkably competitive for news classification.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ SEC 02 NAIVE BAYES -->
+<section class="section-slide">
+  <span class="section-num">02</span>
+  <h2>Naive Bayes</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">A probabilistic classifier built from Bayes' theorem.</p>
+</section>
+
+<section>
+  <h2>The key question</h2>
+  <div class="hbox hbox-blue" style="font-size:0.88em; margin-bottom:0.6em;">
+    Given document <strong>d</strong>, what is the most probable class <strong>c</strong>?
+  </div>
+  <div class="formula" style="font-size:0.9em; margin-bottom:0.6em;">
+    ĉ = argmax<sub>c ∈ C</sub> P(c | d)
+  </div>
+  <p style="font-size:0.75em; margin-bottom:0.4em;">We cannot estimate P(c | d) directly — there are too many possible documents.
+  But <strong>Bayes' theorem</strong> lets us flip it:</p>
+  <div class="formula">
+    P(c | d) = <em>P(d | c)</em> · P(c) / P(d)
+  </div>
+  <div class="cols cols-3" style="margin-top:0.5em;">
+    <div class="card card-mint">
+      <div class="card-title">P(c) — Prior</div>
+      How common is class c in the training corpus?<br/>
+      Counted directly from labels.
+    </div>
+    <div class="card card-gold">
+      <div class="card-title">P(d | c) — Likelihood</div>
+      How likely is this document given class c?<br/>
+      The hard part — we model it with BoW.
+    </div>
+    <div class="card card-blue">
+      <div class="card-title">P(d) — Evidence</div>
+      Same for all classes, so we can ignore it<br/>
+      when we just want argmax.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Bayes' theorem — an intuition before the math</h2>
+  <p style="font-size:0.75em; margin-bottom:0.4em;">
+    Imagine you receive a one-sentence news snippet:<br/>
+    <span style="font-family:'DM Mono',monospace; color:var(--gold);">"The striker scored from a free kick in the 89th minute."</span>
+  </p>
+  <div class="cols cols-2" style="margin-top:0.3em;">
+    <div>
+      <div class="card" style="margin-bottom:0.4em;">
+        <div class="card-title">Prior P(c)</div>
+        AG News: 4 balanced classes → P(Sports) = P(Politics) = P(Sci/Tech) = P(Business) = 0.25<br/>
+        (If Sports were 50% of the corpus, that would raise our starting guess.)
+      </div>
+      <div class="card card-mint">
+        <div class="card-title">Likelihood P(d | c)</div>
+        "striker", "scored", "free kick", "minute" are <em>very</em> common in Sports articles
+        and <em>very rare</em> in Politics articles.<br/>
+        P(d | Sports) ≫ P(d | Politics)
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">Posterior P(c | d)</div>
+        P(Sports | d) ∝ P(d | Sports) · P(Sports)<br/>
+        P(Politics | d) ∝ P(d | Politics) · P(Politics)<br/><br/>
+        Since priors are equal, the likelihood dominates.<br/>
+        The model correctly predicts <strong>Sports</strong>.
+      </div>
+      <div class="hbox" style="margin-top:0.4em;">
+        Bayes: combine what you already know (prior)
+        with what the data says (likelihood).
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The Naive assumption — independence</h2>
+  <p style="font-size:0.75em; margin-bottom:0.3em;">Computing P(d | c) for an arbitrary document is intractable.</p>
+  <div class="hbox hbox-red" style="margin-bottom:0.4em;">
+    <strong>Problem:</strong> "The striker scored a goal" — we would need to estimate the probability of
+    this exact sequence of words given Sports. With a vocabulary of 50,000, that is astronomically sparse.
+  </div>
+  <div class="hbox hbox-mint" style="margin-bottom:0.5em;">
+    <strong>The Naive Bayes assumption:</strong> given the class, each word occurs <em>independently</em>.
+  </div>
+  <div class="formula" style="margin-bottom:0.4em;">
+    P(d | c) = P(w<sub>1</sub>, w<sub>2</sub>, ..., w<sub>n</sub> | c)<br/>
+    &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;≈ P(w<sub>1</sub> | c) · P(w<sub>2</sub> | c) · ... · P(w<sub>n</sub> | c)
+  </div>
+  <div class="cols cols-2">
+    <div class="card card-red">
+      <div class="card-title">Is this assumption true?</div>
+      Absolutely not. "New York" — "York" is far more likely after "New".
+      "Not bad" — "bad" and "not" are correlated.<br/>
+      The model <em>knows</em> this is wrong.
+    </div>
+    <div class="card card-mint">
+      <div class="card-title">So why does it work?</div>
+      Because the <em>classification decision</em> is often correct anyway.
+      Even if probabilities are wrong, we mostly pick the right argmax.
+      "Naive" in name, surprisingly robust in practice.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Estimating probabilities from data</h2>
+  <div class="cols cols-2" style="margin-top:0.3em;">
+    <div>
+      <div class="card" style="margin-bottom:0.4em;">
+        <div class="card-title">Prior P(c)</div>
+        <div class="formula" style="font-size:0.85em;">
+          P(c) = count(documents in class c) / N
+        </div>
+        <p>With AG News (balanced): P(c) ≈ 0.25 for all classes.</p>
+      </div>
+      <div class="card card-mint">
+        <div class="card-title">Likelihood P(w | c)</div>
+        <div class="formula" style="font-size:0.85em;">
+          P(w | c) = count(w in class c docs) / count(all words in class c docs)
+        </div>
+        <p>Estimated from all training documents in class c.</p>
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">Example — Sports class</div>
+        Training corpus for Sports contains 500,000 tokens.<br/>
+        "goal" appears 2,000 times.<br/>
+        "minister" appears 3 times.<br/><br/>
+        <div class="formula" style="font-size:0.82em;">
+          P(goal | Sports) = 2000 / 500000 = <strong>0.004</strong><br/>
+          P(minister | Sports) = 3 / 500000 = <strong>0.000006</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Classifying a new document</h2>
+  <div class="hbox hbox-blue" style="margin-bottom:0.4em; font-size:0.8em;">
+    Document: <span style="font-family:'DM Mono',monospace; color:var(--gold);">"Liverpool win title goal"</span>
+  </div>
+  <div style="font-size:0.76em;">
+    <div class="formula" style="margin-bottom:0.4em;">
+      score(Sports) = log P(Sports) + log P(liverpool | Sports) + log P(win | Sports) + log P(title | Sports) + log P(goal | Sports)<br/>
+      score(Politics) = log P(Politics) + log P(liverpool | Politics) + log P(win | Politics) + log P(title | Politics) + log P(goal | Politics)
+    </div>
+    <table class="tbl" style="margin-bottom:0.4em;">
+      <tr><th>term</th><th>log P(w | Sports)</th><th>log P(w | Politics)</th></tr>
+      <tr><td>liverpool</td><td class="hi">−4.2</td><td class="lo">−11.5</td></tr>
+      <tr><td>win</td><td class="hi">−5.1</td><td>−6.8</td></tr>
+      <tr><td>title</td><td class="hi">−5.8</td><td>−7.2</td></tr>
+      <tr><td>goal</td><td class="hi">−4.6</td><td class="lo">−12.0</td></tr>
+      <tr><td><strong>log prior</strong></td><td>−1.39</td><td>−1.39</td></tr>
+      <tr><td><strong>total score</strong></td><td class="hi"><strong>−21.1</strong></td><td class="lo"><strong>−38.9</strong></td></tr>
+    </table>
+    <div class="hbox">
+      Sports score is less negative → higher probability → <strong>predicted: Sports ✓</strong>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Why log-probabilities?</h2>
+  <div class="cols cols-2" style="margin-top:0.3em;">
+    <div>
+      <div class="card card-red" style="margin-bottom:0.4em;">
+        <div class="card-title">The underflow problem</div>
+        A document of 100 words. Each P(w | c) ≈ 0.001.<br/><br/>
+        <div class="formula" style="font-size:0.8em;">
+          0.001<sup>100</sup> = 10<sup>−300</sup>
+        </div>
+        This is <strong>smaller than float64 can represent</strong>.
+        Python will give you 0.0.
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint" style="margin-bottom:0.4em;">
+        <div class="card-title">The log trick</div>
+        log turns products into sums. No underflow.
+        argmax is preserved.
+        <div class="formula" style="font-size:0.85em;">
+          log P(c | d) ∝ log P(c) + Σ<sub>i</sub> log P(w<sub>i</sub> | c)
+        </div>
+        Numbers stay in a manageable range (−10 to −2, typically).
+      </div>
+    </div>
+  </div>
+  <div class="hbox hbox-gold" style="margin-top:0.4em;">
+    <strong>Rule:</strong> whenever you multiply many small probabilities together in code,
+    always work in log-space. This is not a trick — it is standard practice.
+  </div>
+</section>
+
+<section>
+  <h2>The zero-probability problem — and add-α smoothing</h2>
+  <div class="hbox hbox-red" style="margin-bottom:0.4em; font-size:0.78em;">
+    <strong>Problem:</strong> "offside" never appears in Politics training docs →
+    P(offside | Politics) = 0 → score(Politics) = −∞.
+    <strong>One unseen word annihilates the entire computation.</strong>
+  </div>
+  <div class="cols cols-2" style="margin-bottom:0.4em;">
+    <div class="card">
+      <div class="card-title">Without smoothing</div>
+      P(offside | Politics) = 0 / 500 000 = <strong>0</strong><br/>
+      P(offside | Sports) &nbsp;= 800 / 500 000 = 0.0016
+    </div>
+    <div class="card card-mint">
+      <div class="card-title">Add-α smoothing (general form)</div>
+      <div class="formula" style="font-size:0.85em;">
+        P<sub>α</sub>(w | c) = (count(w, c) + α) / (count(c) + α · |V|)
+      </div>
+      α = 1 (Laplace): P(offside | Politics) = 1 / 550 000 ≈ 1.8 × 10⁻⁶<br/>
+      No probability is ever exactly 0.
+    </div>
+  </div>
+  <div class="cols cols-2">
+    <div class="card card-red" style="font-size:0.8em;">
+      <div class="card-title">Real-world example</div>
+      "Cryptocurrency" didn't exist in 2005 training corpora.
+      A model trained then without smoothing assigns P = 0
+      to every class — it crashes on any post-2009 article
+      containing that word.
+    </div>
+    <div class="card" style="font-size:0.8em;">
+      <div class="card-title">Choosing α</div>
+      α = 1: Laplace (safe default)<br/>
+      α → 0: no smoothing<br/>
+      α large: push toward uniform<br/><br/>
+      α is a <strong>hyperparameter</strong> — tune it on the validation set.
+      sklearn exposes it as <code>MultinomialNB(alpha=...)</code>.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Naive Bayes for multi-class classification</h2>
+  <div class="cols cols-2" style="margin-top:0.3em;">
+    <div>
+      <p style="font-size:0.75em;">NB extends naturally to C &gt; 2 classes.
+        We compute a score for each class and pick the highest.</p>
+      <div class="formula" style="font-size:0.82em;">
+        ĉ = argmax<sub>c</sub> [log P(c) + Σ<sub>i</sub> log P(w<sub>i</sub> | c)]
+      </div>
+      <div class="card" style="margin-top:0.4em;">
+        <div class="card-title">AG News — 4 classes</div>
+        For each test document, compute 4 scores.
+        The class with the highest log-probability wins.
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">Example</div>
+        Document: "New quantum chip breaks speed record"<br/><br/>
+        <table class="tbl" style="margin-top:0.3em;">
+          <tr><th>class</th><th>log-score</th></tr>
+          <tr><td>Sports</td><td class="lo">−52.3</td></tr>
+          <tr><td>Politics</td><td class="lo">−48.1</td></tr>
+          <tr><td>Business</td><td>−39.7</td></tr>
+          <tr><td class="hi">Sci/Tech</td><td class="hi"><strong>−28.4</strong></td></tr>
+        </table>
+        <p style="margin-top:0.3em;">→ Predicted: <strong>Sci/Tech ✓</strong></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Multinomial NB vs Bernoulli NB</h2>
+  <p style="font-size:0.75em; margin-bottom:0.4em;">There are two main variants of Naive Bayes for text. They differ in how they encode the document.</p>
+  <div class="cols cols-2">
+    <div>
+      <div class="card card-mint" style="margin-bottom:0.4em;">
+        <div class="card-title">Multinomial NB (most common)</div>
+        Feature vector: <strong>word counts</strong> (or TF).<br/>
+        Likelihood: based on the count of each word.<br/>
+        P(w | c) estimated as a word frequency.<br/><br/>
+        "goal goal goal penalty" → [goal:3, penalty:1]<br/><br/>
+        <span class="badge badge-g">Better for long docs</span>
+        <span class="badge badge-g">Count-sensitive</span>
+      </div>
+    </div>
+    <div>
+      <div class="card card-blue" style="margin-bottom:0.4em;">
+        <div class="card-title">Bernoulli NB</div>
+        Feature vector: <strong>binary presence/absence</strong>.<br/>
+        "goal goal goal penalty" → [goal:1, penalty:1]<br/>
+        Count is ignored; only presence matters.<br/>
+        Also penalises words that are <em>absent</em>.<br/><br/>
+        <span class="badge badge-g">Better for short docs</span>
+        <span class="badge badge-r">Discards frequency info</span>
+      </div>
+    </div>
+  </div>
+  <div class="hbox" style="margin-top:0.4em;">
+    For news classification on AG News, Multinomial NB is the right choice.
+    For spam detection (short emails, presence of keywords matters), Bernoulli NB is often competitive.
+  </div>
+</section>
+
+<section>
+  <h2>Naive Bayes — summary and properties</h2>
+  <div class="cols cols-3">
+    <div class="card card-mint">
+      <div class="card-title">Training</div>
+      Count words per class.<br/>
+      Compute priors and likelihoods.<br/>
+      <strong>O(N·L)</strong> where N = docs, L = avg length.<br/>
+      Extremely fast. One pass over data.
+    </div>
+    <div class="card card-gold">
+      <div class="card-title">Inference</div>
+      For each test doc, compute C log-sums.<br/>
+      <strong>O(C · L)</strong>.<br/>
+      Fast even at scale.
+    </div>
+    <div class="card card-blue">
+      <div class="card-title">Properties</div>
+      Works well with little data.<br/>
+      Interpretable (can inspect P(w | c)).<br/>
+      Bad calibration — log-probabilities are rough.<br/>
+      Violated independence often doesn't matter.
+    </div>
+  </div>
+  <div class="hbox hbox-gold" style="margin-top:0.5em;">
+    NB is a <strong>generative model</strong>: it models how data is generated (class → words).
+    This is fundamentally different from what logistic regression does.
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ SEC 03 LOGISTIC REGRESSION -->
+<section class="section-slide">
+  <span class="section-num">03</span>
+  <h2>Logistic Regression</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">A discriminative classifier that learns a decision boundary directly.</p>
+</section>
+
+<section>
+  <h2>From linear regression to logistic regression</h2>
+  <div class="cols cols-2" style="margin-top:0.3em;">
+    <div>
+      <div class="card" style="margin-bottom:0.4em;">
+        <div class="card-title">Linear regression — output is unbounded</div>
+        <div class="formula" style="font-size:0.85em;">
+          ŷ = w<sup>T</sup>x + b
+        </div>
+        Output ŷ ∈ (−∞, +∞).<br/>
+        Cannot be a probability.
+      </div>
+      <div class="card card-mint">
+        <div class="card-title">Logistic regression — squash to [0, 1]</div>
+        <div class="formula" style="font-size:0.85em;">
+          ŷ = σ(w<sup>T</sup>x + b)<br/><br/>
+          <em>σ(z) = 1 / (1 + e<sup>−z</sup>)</em>
+        </div>
+        Output ŷ ∈ (0, 1) — a valid probability.
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">The sigmoid function σ(z)</div>
+        <table class="tbl" style="margin-bottom:0.4em;">
+          <tr><th>z</th><th>σ(z)</th><th>interpretation</th></tr>
+          <tr><td>−5</td><td>0.007</td><td>very unlikely positive</td></tr>
+          <tr><td>−2</td><td>0.119</td><td>unlikely positive</td></tr>
+          <tr><td>0</td><td>0.500</td><td>uncertain</td></tr>
+          <tr><td>2</td><td>0.881</td><td>likely positive</td></tr>
+          <tr><td>5</td><td>0.993</td><td>very likely positive</td></tr>
+        </table>
+        <p style="margin-top:0.2em;">z = w<sup>T</sup>x + b is the <em>score</em> before squashing.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Logistic regression — a concrete example</h2>
+  <div class="hbox hbox-gold" style="margin-bottom:0.5em; font-size:0.8em;">
+    Binary task: Sports (y=1) vs Politics (y=0). BoW features.
+  </div>
+  <div class="cols cols-2">
+    <div>
+      <div class="card" style="margin-bottom:0.4em;">
+        <div class="card-title">The learned weights w</div>
+        <table class="tbl">
+          <tr><th>feature (word)</th><th>weight w</th><th>meaning</th></tr>
+          <tr><td>goal</td><td class="hi">+3.2</td><td>strongly → Sports</td></tr>
+          <tr><td>penalty</td><td class="hi">+2.8</td><td>strongly → Sports</td></tr>
+          <tr><td>striker</td><td class="hi">+2.5</td><td>strongly → Sports</td></tr>
+          <tr><td>senator</td><td class="lo">−3.1</td><td>strongly → Politics</td></tr>
+          <tr><td>parliament</td><td class="lo">−2.9</td><td>strongly → Politics</td></tr>
+          <tr><td>the</td><td>+0.01</td><td>uninformative</td></tr>
+        </table>
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint">
+        <div class="card-title">Computing the score</div>
+        Document: "The striker scored a penalty"<br/>
+        <div class="formula" style="font-size:0.82em; margin-top:0.3em;">
+          z = b + 1 · w(striker) + 1 · w(penalty) + 1 · w(the)<br/>
+          z = 0.1 + 2.5 + 2.8 + 0.01 = <strong>5.41</strong><br/>
+          σ(5.41) = <strong>0.996</strong>
+        </div>
+        96% probability of Sports → predicted: <span class="badge badge-g">Sports ✓</span>
+      </div>
+      <div class="card card-gold" style="margin-top:0.4em;">
+        <div class="card-title">Another document</div>
+        "Senate blocks new climate bill"<br/>
+        z = 0.1 + (−3.1) + ... = −4.8<br/>
+        σ(−4.8) = 0.008 → predicted: <span class="badge badge-r">Politics ✓</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Multi-class logistic regression — softmax</h2>
+  <p style="font-size:0.75em; margin-bottom:0.3em;">
+    For C &gt; 2 classes, we learn one weight vector per class and use the <strong>softmax</strong> function.
+  </p>
+  <div class="cols cols-2">
+    <div>
+      <div class="formula" style="margin-bottom:0.4em;">
+        z<sub>c</sub> = w<sub>c</sub><sup>T</sup>x + b<sub>c</sub> &nbsp; (one per class c)<br/><br/>
+        P(c | x) = softmax(z)<sub>c</sub><br/>
+        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;= e<sup>z<sub>c</sub></sup> / Σ<sub>k</sub> e<sup>z<sub>k</sub></sup>
+      </div>
+      <div class="hbox hbox-blue">
+        softmax turns raw scores into a valid probability distribution
+        (all positive, sum to 1).
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">Example — 4 classes</div>
+        Document: "New quantum processor achieved"<br/>
+        <table class="tbl" style="margin-top:0.3em;">
+          <tr><th>class</th><th>score z</th><th>P(c | x)</th></tr>
+          <tr><td>Sports</td><td class="lo">−3.1</td><td>0.007</td></tr>
+          <tr><td>Politics</td><td>−1.2</td><td>0.044</td></tr>
+          <tr><td>Business</td><td>0.8</td><td>0.157</td></tr>
+          <tr><td class="hi">Sci/Tech</td><td class="hi">2.9</td><td class="hi"><strong>0.792</strong></td></tr>
+        </table>
+        → Predicted: <strong>Sci/Tech ✓</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>How do we learn the weights?</h2>
+  <div class="hbox hbox-blue" style="margin-bottom:0.4em;">
+    We need to find weights w that make the model assign high probability to the <em>correct</em> class for every training example.
+  </div>
+  <div class="cols cols-2">
+    <div>
+      <div class="card" style="margin-bottom:0.4em;">
+        <div class="card-title">Cross-entropy loss</div>
+        For a training example (x, y):
+        <div class="formula" style="font-size:0.85em; margin-top:0.3em;">
+          L(w) = −log P(y | x; w)
+        </div>
+        If P(correct class) = 0.99 → loss ≈ 0.01 (good)<br/>
+        If P(correct class) = 0.01 → loss ≈ 4.6 (bad)
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint">
+        <div class="card-title">Training objective</div>
+        Minimise the average loss over all training examples:
+        <div class="formula" style="font-size:0.82em; margin-top:0.3em;">
+          J(w) = −(1/N) Σ<sub>i</sub> log P(y<sub>i</sub> | x<sub>i</sub>; w)
+        </div>
+        This is <strong>maximum likelihood estimation</strong> (MLE)
+        in log-space.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Gradient descent — intuition</h2>
+  <div class="cols cols-6040">
+    <div>
+      <div class="step-row">
+        <div class="step-num">1</div>
+        <div><strong>Initialise</strong> weights randomly (or to zero).</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">2</div>
+        <div><strong>Compute</strong> the gradient ∇J(w) — which direction increases the loss most?</div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">3</div>
+        <div><strong>Step</strong> in the opposite direction (downhill):
+          <div class="formula" style="font-size:0.8em; margin-top:0.2em;">w ← w − η · ∇J(w)</div>
+          η (eta) is the <em>learning rate</em>.
+        </div>
+      </div>
+      <div class="step-row">
+        <div class="step-num">4</div>
+        <div><strong>Repeat</strong> until the loss stops decreasing.</div>
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">Analogy: descending a hill blindfolded</div>
+        At each step, feel which direction the ground slopes downward.
+        Take a step in that direction.<br/><br/>
+        Too large a step (large η): you overshoot and bounce.<br/>
+        Too small a step (small η): you take forever to reach the bottom.<br/><br/>
+        <span class="badge badge-g">sklearn handles this automatically</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Gradient descent — the update rule for logistic regression</h2>
+  <p style="font-size:0.74em; margin-bottom:0.3em;">The gradient of cross-entropy loss with respect to weights has a beautiful form:</p>
+  <div class="formula" style="margin-bottom:0.5em; font-size:0.88em;">
+    ∂L / ∂w<sub>j</sub> = (ŷ − y) · x<sub>j</sub>
+  </div>
+  <div class="cols cols-3">
+    <div class="card">
+      <div class="card-title">Correct prediction (ŷ ≈ y)</div>
+      ŷ − y ≈ 0<br/>
+      Gradient ≈ 0<br/>
+      <strong>No update needed</strong><br/>
+      Model is already correct.
+    </div>
+    <div class="card card-red">
+      <div class="card-title">False positive (ŷ ≈ 1, y = 0)</div>
+      ŷ − y ≈ +1<br/>
+      Gradient = +x<br/>
+      <strong>Decrease w for features present in x</strong>
+    </div>
+    <div class="card card-mint">
+      <div class="card-title">False negative (ŷ ≈ 0, y = 1)</div>
+      ŷ − y ≈ −1<br/>
+      Gradient = −x<br/>
+      <strong>Increase w for features present in x</strong>
+    </div>
+  </div>
+  <div class="hbox" style="margin-top:0.5em;">
+    The model only learns from mistakes. Correct predictions do not move the weights. Elegant.
+  </div>
+</section>
+
+<section>
+  <h2>Gradient descent — a worked mini-example</h2>
+  <div class="hbox hbox-gold" style="margin-bottom:0.4em; font-size:0.8em;">
+    x = [1, 0, 1] (features: "goal", "senator", "striker") · y = 1 (Sports) · η = 0.1
+  </div>
+  <div class="cols cols-2">
+    <div>
+      <div class="card" style="margin-bottom:0.4em;">
+        <div class="card-title">Step 0 — initial weights</div>
+        w = [0.2, 0.5, −0.3] · b = 0<br/>
+        z = 0.2·1 + 0.5·0 + (−0.3)·1 = <strong>−0.1</strong><br/>
+        ŷ = σ(−0.1) = <strong>0.475</strong><br/>
+        Error: ŷ − y = 0.475 − 1 = <strong>−0.525</strong>
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint">
+        <div class="card-title">Step 1 — gradient update</div>
+        ∂L/∂w = (−0.525) · [1, 0, 1]<br/>
+        = [−0.525, 0, −0.525]<br/><br/>
+        w ← [0.2, 0.5, −0.3] − 0.1 · [−0.525, 0, −0.525]<br/>
+        w ← <strong>[0.253, 0.5, −0.247]</strong><br/><br/>
+        New z = 0.253 + 0 − 0.247 = 0.006<br/>
+        New ŷ = σ(0.006) = <strong>0.502</strong> (closer to 1)
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Regularisation — preventing overfitting</h2>
+  <div class="hbox hbox-red" style="margin-bottom:0.4em;">
+    <strong>Problem:</strong> with 50,000 features and many rare words, the model can memorise the training set.
+    Weights for rare words become very large.
+  </div>
+  <div class="cols cols-2">
+    <div>
+      <div class="card card-mint" style="margin-bottom:0.4em;">
+        <div class="card-title">L2 regularisation (Ridge)</div>
+        Add a penalty for large weights:
+        <div class="formula" style="font-size:0.82em; margin-top:0.3em;">
+          J(w) = loss + λ · Σ w<sub>j</sub><sup>2</sup>
+        </div>
+        Shrinks all weights toward zero.<br/>
+        Keeps all features (just smaller).<br/>
+        Parameter: C = 1/λ in sklearn (larger C = less regularisation).
+      </div>
+    </div>
+    <div>
+      <div class="card card-blue" style="margin-bottom:0.4em;">
+        <div class="card-title">L1 regularisation (Lasso)</div>
+        <div class="formula" style="font-size:0.82em; margin-top:0.3em;">
+          J(w) = loss + λ · Σ |w<sub>j</sub>|
+        </div>
+        Pushes many weights to exactly zero.<br/>
+        Produces a <em>sparse</em> model.<br/>
+        Implicitly performs feature selection.
+      </div>
+    </div>
+  </div>
+  <div class="hbox hbox-gold" style="margin-top:0.3em;">
+    <strong>Rule of thumb:</strong> L2 is the safe default for BoW text classification.
+    C=1.0 (sklearn default) is a reasonable starting point.
+    Always tune C on the validation set.
+  </div>
+</section>
+
+<section>
+  <h2>Regularisation — an intuition with examples</h2>
+  <div class="cols cols-2">
+    <div>
+      <div class="card card-red" style="margin-bottom:0.4em;">
+        <div class="card-title">Overfitting without regularisation</div>
+        Training set contains: "Messi scores brace".<br/>
+        No other article uses "brace".<br/>
+        Model assigns w(brace) = +8.5 for Sports.<br/><br/>
+        Test set: "brace" doesn't appear.<br/>
+        Model works fine on this specific word
+        but generalises poorly to other football vocabulary it under-weighted.
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint">
+        <div class="card-title">With L2 regularisation</div>
+        w(brace) is penalised for being large.<br/>
+        Model settles on w(brace) ≈ +1.2.<br/>
+        It also more evenly weights other football words: "scored", "goal", "match".<br/><br/>
+        Better generalisation because no single rare word dominates.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ SEC 04 GENERATIVE VS DISCRIMINATIVE -->
+<section class="section-slide">
+  <span class="section-num">04</span>
+  <h2>Generative vs Discriminative</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Two philosophies, one classification task.</p>
+</section>
+
+<section>
+  <h2>Side-by-side comparison</h2>
+  <table class="tbl" style="font-size:0.74em; margin-top:0.4em;">
+    <tr>
+      <th>property</th>
+      <th style="color:var(--mint);">Naive Bayes</th>
+      <th style="color:var(--blue);">Logistic Regression</th>
+    </tr>
+    <tr>
+      <td>Type</td>
+      <td>Generative</td>
+      <td>Discriminative</td>
+    </tr>
+    <tr>
+      <td>What it models</td>
+      <td>P(x, c) = P(x | c) · P(c)</td>
+      <td>P(c | x) directly</td>
+    </tr>
+    <tr>
+      <td>Training</td>
+      <td>Counting + MLE (closed form)</td>
+      <td>Gradient descent (iterative)</td>
+    </tr>
+    <tr>
+      <td>Training speed</td>
+      <td class="hi">Very fast — one pass over data</td>
+      <td>Slower — multiple epochs</td>
+    </tr>
+    <tr>
+      <td>Data efficiency</td>
+      <td class="hi">Good with little data</td>
+      <td>Needs more data to shine</td>
+    </tr>
+    <tr>
+      <td>Accuracy (large data)</td>
+      <td>Often lower</td>
+      <td class="hi">Often higher</td>
+    </tr>
+    <tr>
+      <td>Probability calibration</td>
+      <td class="lo">Poor (independence violated)</td>
+      <td class="hi">Good (directly optimised)</td>
+    </tr>
+    <tr>
+      <td>Feature independence</td>
+      <td>Required (violated in practice)</td>
+      <td>Not required</td>
+    </tr>
+    <tr>
+      <td>Interpretability</td>
+      <td class="hi">Very easy (inspect P(w | c))</td>
+      <td class="hi">Easy (inspect weights w)</td>
+    </tr>
+    <tr>
+      <td>sklearn class</td>
+      <td><code>MultinomialNB</code></td>
+      <td><code>LogisticRegression</code></td>
+    </tr>
+  </table>
+</section>
+
+<section>
+  <h2>Ng & Jordan (2002) — the theoretical picture</h2>
+  <div class="cols cols-2" style="margin-top:0.2em;">
+    <div>
+      <div class="card card-gold" style="margin-bottom:0.4em;">
+        <div class="card-title">Key result</div>
+        NB converges to its optimal error faster (needs less data),
+        but converges to a <em>higher</em> error than LR.<br/><br/>
+        LR is asymptotically better but needs more data to get there.
+      </div>
+      <div class="hbox">
+        Roughly: with &lt;100 examples, NB can win.
+        With &gt;1000 examples, LR almost always wins.
+      </div>
+    </div>
+    <div>
+      <div class="card">
+        <div class="card-title">Practical implication</div>
+        If you have <em>lots</em> of labelled data (AG News: 120k docs):
+        use Logistic Regression.<br/><br/>
+        If you have <em>little</em> labelled data (50 emails to classify):
+        try Naive Bayes first.<br/><br/>
+        If you need to deploy in &lt;5 minutes:
+        Naive Bayes, no question.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>When Naive Bayes fails — the "not" problem</h2>
+  <div class="cols cols-2" style="margin-top:0.2em;">
+    <div>
+      <div class="hbox hbox-red" style="margin-bottom:0.4em; font-size:0.8em;">
+        Sentence 1: "This film is <strong>not</strong> bad."<br/>
+        Sentence 2: "This film is <strong>not</strong> good."
+      </div>
+      <div class="card card-red">
+        <div class="card-title">NB treatment</div>
+        BoW features: {film, not, bad} and {film, not, good}.<br/>
+        "bad" → strong negative signal.<br/>
+        "good" → strong positive signal.<br/>
+        "not" → weak, often treated as stop word.<br/><br/>
+        NB predicts: Sentence 1 = <span class="badge badge-r">Negative</span>, Sentence 2 = <span class="badge badge-g">Positive</span><br/>
+        <strong>Both wrong!</strong>
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint">
+        <div class="card-title">Mitigation strategies</div>
+        1. <strong>n-grams as features:</strong> "not bad" and "not good" become single tokens.
+        The bigram carries the negation context.<br/><br/>
+        2. <strong>Negation tagging:</strong> flip the sentiment of all words until the next punctuation after "not".<br/>
+        "not bad" → "not bad_NEG"<br/><br/>
+        3. Use <strong>Logistic Regression</strong>, which can learn that "not" + "bad" together are positive.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>When Logistic Regression fails</h2>
+  <div class="cols cols-2">
+    <div>
+      <div class="card card-red" style="margin-bottom:0.4em;">
+        <div class="card-title">Linear separability</div>
+        LR finds a <em>linear</em> decision boundary in feature space.
+        If classes are not linearly separable, it cannot reach 100% accuracy no matter how you tune it.
+      </div>
+      <div class="card card-red">
+        <div class="card-title">Domain shift</div>
+        Trained on sports news from 2000–2010.
+        Deployed in 2024: "VAR", "MLS", "e-sports" are unknown features.
+        Weights learned for old vocabulary do not transfer.
+      </div>
+    </div>
+    <div>
+      <div class="card card-gold">
+        <div class="card-title">The rare class problem</div>
+        AG News is balanced. Real datasets often are not.<br/>
+        LR (like NB) is affected by class imbalance.<br/><br/>
+        A spam filter with 1% spam: model that predicts "not spam" always gets 99% accuracy — useless.<br/><br/>
+        Fix: class_weight='balanced' in sklearn, or adjust the threshold.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ════════════════════════════════════════════ SEC 05 WHATS NEXT -->
+<section class="section-slide">
+  <span class="section-num">05</span>
+  <h2>What comes next</h2>
+  <p style="color:var(--text-dim); font-size:0.58em;">Where BoW fails, and what that motivates.</p>
+</section>
+
+<section>
+  <h2>The fundamental limitation of BoW</h2>
+  <div class="cols cols-2" style="margin-top:0.2em;">
+    <div>
+      <div class="card card-red" style="margin-bottom:0.4em;">
+        <div class="card-title">Problem 1 — synonyms look different</div>
+        "car" and "automobile" are completely different features.<br/>
+        A model trained on "car" does not know "automobile" is similar.<br/><br/>
+        "The vehicle broke down" — "vehicle" might be out of vocabulary.<br/>
+        BoW treats it as noise.
+      </div>
+      <div class="card card-red">
+        <div class="card-title">Problem 2 — high dimensionality</div>
+        |V| = 50,000 features. Mostly zeros in each document.<br/>
+        Sparse, high-dimensional vectors are hard to regularise.
+      </div>
+    </div>
+    <div>
+      <div class="card card-mint" style="margin-bottom:0.4em;">
+        <div class="card-title">The solution — embeddings (Session 04)</div>
+        Map each word to a dense vector in ℝ<sup>d</sup> (d ≈ 100–300).<br/>
+        "car" and "automobile" map to nearby vectors.<br/><br/>
+        We learn these representations from large unlabelled corpora (word2vec, GloVe).<br/><br/>
+        Then we average word embeddings into a document embedding, and classify that.
+      </div>
+      <div class="hbox hbox-blue">
+        BoW → word2vec → LSTM → Transformer<br/>
+        Each step: richer, more context-aware representation.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>The running benchmark — where we are after Session 03</h2>
+  <table class="tbl" style="font-size:0.75em; margin-top:0.4em;">
+    <tr>
+      <th>model</th>
+      <th>features</th>
+      <th>AG News accuracy</th>
+      <th>session</th>
+    </tr>
+    <tr>
+      <td>Majority baseline</td>
+      <td>none</td>
+      <td class="lo">25.0%</td>
+      <td>01</td>
+    </tr>
+    <tr>
+      <td>Naive Bayes (count)</td>
+      <td>BoW counts</td>
+      <td>~82–84%</td>
+      <td>03 TP-A</td>
+    </tr>
+    <tr>
+      <td>Naive Bayes (TF-IDF)</td>
+      <td>TF-IDF</td>
+      <td>~84–86%</td>
+      <td>03 TP-A</td>
+    </tr>
+    <tr>
+      <td>Logistic Regression</td>
+      <td>TF-IDF</td>
+      <td class="hi">~88–91%</td>
+      <td>03 TP-B</td>
+    </tr>
+    <tr>
+      <td style="color:var(--text-dim);">LR + bigrams</td>
+      <td style="color:var(--text-dim);">TF-IDF + ngrams</td>
+      <td style="color:var(--text-dim);">~90–92%</td>
+      <td style="color:var(--text-dim);">03 bonus</td>
+    </tr>
+    <tr>
+      <td style="color:var(--text-dim);">Embeddings (fastText)</td>
+      <td style="color:var(--text-dim);">dense vectors</td>
+      <td style="color:var(--text-dim);">~92–93%</td>
+      <td style="color:var(--text-dim);">04</td>
+    </tr>
+    <tr>
+      <td style="color:var(--text-dim);">BERT fine-tuned</td>
+      <td style="color:var(--text-dim);">contextual</td>
+      <td style="color:var(--text-dim);">~94–95%</td>
+      <td style="color:var(--text-dim);">07</td>
+    </tr>
+  </table>
+</section>
+
+<section>
+  <h2>Key concepts — summary</h2>
+  <div class="cols cols-3" style="margin-top:0.3em;">
+    <div class="card card-mint">
+      <div class="card-title">Bag of Words</div>
+      Documents → count vectors.<br/>
+      Loses word order.<br/>
+      Simple but powerful baseline.<br/>
+      TF-IDF improves raw counts.
+    </div>
+    <div class="card card-gold">
+      <div class="card-title">Naive Bayes</div>
+      Generative model.<br/>
+      Bayes + independence assumption.<br/>
+      Closed-form training (counting).<br/>
+      Laplace smoothing for zeros.<br/>
+      Always work in log-space.
+    </div>
+    <div class="card card-blue">
+      <div class="card-title">Logistic Regression</div>
+      Discriminative model.<br/>
+      Sigmoid / softmax output.<br/>
+      Cross-entropy loss.<br/>
+      Gradient descent training.<br/>
+      Regularise to prevent overfit.
+    </div>
+  </div>
+  <div class="hbox hbox-gold" style="margin-top:0.5em; font-size:0.78em;">
+    <strong>The arc:</strong>
+    tokenise → represent as BoW → classify with NB or LR → measure with F1 → iterate.
+    Every step in this pipeline is a decision with tradeoffs. Your TP today makes those tradeoffs concrete.
+  </div>
+</section>
+
+<section>
+  <h2>Today's practical labs</h2>
+  <div class="cols cols-2" style="margin-top:0.3em;">
+    <div class="card card-gold">
+      <div class="card-title">TP-A — Naive Bayes (1h)</div>
+      Build MultinomialNB from scratch (scratch implementation + sklearn).<br/>
+      Experiment with smoothing α.<br/>
+      Inspect per-class most informative features.<br/>
+      Ablate: raw counts vs TF-IDF.<br/>
+      Full evaluation: F1 per class, confusion matrix.
+    </div>
+    <div class="card card-blue">
+      <div class="card-title">TP-B — Logistic Regression (40 min)</div>
+      Fit LR with sklearn on the same features.<br/>
+      Compare against NB baseline.<br/>
+      Regularisation sweep: plot accuracy vs C.<br/>
+      Feature analysis: top positive/negative weights per class.<br/>
+      Bonus: add bigrams, measure improvement.
+    </div>
+  </div>
+  <div class="hbox" style="margin-top:0.5em;">
+    Both TPs use the same AG News split from Session 01.
+    All results go into your running comparison table.
+  </div>
+</section>
+
+</div><!-- /slides -->
+</div><!-- /reveal -->
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+<script>
+Reveal.initialize({
+  hash: true,
+  slideNumber: 'c/t',
+  transition: 'fade',
+  transitionSpeed: 'fast',
+  controls: true,
+  progress: true,
+  center: false,
+  width: 1100,
+  height: 700,
+  margin: 0.04,
+  plugins: [RevealHighlight, RevealNotes],
+});
+</script>
+</body>
+</html>
