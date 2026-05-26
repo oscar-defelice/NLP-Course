@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NLP — Session 07: Transformers and BERT</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css"/>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--mint:#56c8ba;--mint-dim:#1e4a45;--navy:#4a6fc8;--navy-dim:#1a2740;--gold:#e8c47a;--gold-dim:#3d2e0f;--text:#e6edf3;--text-dim:#8b949e;--red:#f47067;--red-dim:#3d1212;--green:#7ee787;--green-dim:#122d1a;--purple:#c084fc;--purple-dim:#2d1a40;}
+.reveal-viewport{background:var(--bg);}
+.reveal{font-family:'DM Sans',sans-serif;font-size:34px;color:var(--text);}
+.reveal h1,.reveal h2,.reveal h3{font-family:'DM Serif Display',serif;text-transform:none;letter-spacing:-0.01em;color:var(--text);margin-bottom:0.4em;}
+.reveal h1{font-size:1.9em;line-height:1.1;}
+.reveal h2{font-size:1.25em;color:var(--mint);}
+.reveal h3{font-size:0.95em;color:var(--gold);font-style:italic;}
+.reveal p{font-weight:300;line-height:1.5;margin:0.3em 0;}
+.reveal li{font-weight:300;line-height:1.5;margin:0.2em 0;}
+.reveal strong{font-weight:500;color:var(--mint);}
+.reveal em{color:var(--gold);font-style:italic;}
+.reveal code{font-family:'DM Mono',monospace;font-size:0.76em;background:var(--surface);padding:0.1em 0.35em;border-radius:4px;color:var(--mint);}
+.reveal pre{margin:0.5em auto;box-shadow:none;width:100%;}
+.reveal pre code{font-size:0.66em;border-radius:8px;padding:0.9em 1.1em;background:var(--surface);border:1px solid var(--border);max-height:400px;overflow:auto;}
+.reveal ul{list-style:none;padding:0;margin:0.3em 0;}
+.reveal ul li::before{content:"›";color:var(--mint);margin-right:0.4em;font-weight:500;}
+.reveal .slide-number{color:var(--text-dim);font-family:'DM Mono',monospace;font-size:0.5em;}
+.reveal .progress{color:var(--mint);height:3px;}
+.section-slide{background:var(--navy-dim)!important;}
+.section-slide h2{font-size:1.9em;color:var(--text);}
+.section-num{display:block;font-family:'DM Mono',monospace;font-size:0.45em;color:var(--mint);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.6em;}
+.cols{display:grid;gap:1.2em;}
+.cols-2{grid-template-columns:1fr 1fr;}
+.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.cols-6040{grid-template-columns:60fr 40fr;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.65em 0.9em;font-size:0.76em;}
+.card-title{font-family:'DM Mono',monospace;font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.4em;}
+.card.gold{border-color:var(--gold-dim);background:#1a160a;}
+.card.navy{border-color:var(--navy-dim);background:#0e1420;}
+.card.red{border-color:var(--red-dim);background:#1a0d0d;}
+.card.mint{border-color:var(--mint-dim);background:#0d1e1c;}
+.card.purple{border-color:var(--purple-dim);background:#180d2a;}
+.hbox{background:var(--surface);border-left:3px solid var(--mint);border-radius:6px;padding:0.55em 0.9em;font-size:0.76em;}
+.hbox.gold{border-left-color:var(--gold);}
+.hbox.red{border-left-color:var(--red);}
+.formula{font-family:'DM Mono',monospace;font-size:0.82em;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.4em 0.8em;margin:0.35em 0;color:var(--gold);}
+.pill{display:inline-block;font-family:'DM Mono',monospace;font-size:0.32em;padding:0.25em 0.8em;border-radius:99px;margin:0.15em;letter-spacing:0.08em;}
+.pill-mint{background:var(--mint-dim);color:var(--mint);border:1px solid var(--mint);}
+.pill-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold);}
+.pill-navy{background:var(--navy-dim);color:var(--navy);border:1px solid var(--navy);}
+.pill-purple{background:var(--purple-dim);color:var(--purple);border:1px solid var(--purple);}
+.pill-red{background:var(--red-dim);color:var(--red);border:1px solid var(--red);}
+.title-meta{font-family:'DM Mono',monospace;font-size:0.36em;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.9em;}
+.title-tag{display:inline-block;border:1px solid var(--mint-dim);color:var(--mint);padding:0.18em 0.7em;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.36em;letter-spacing:0.08em;margin:0.2em;}
+.cmp-table{width:100%;border-collapse:collapse;font-size:0.66em;}
+.cmp-table th{font-family:'DM Mono',monospace;font-size:0.85em;color:var(--text-dim);padding:0.4em 0.6em;border-bottom:1px solid var(--border);text-align:left;}
+.cmp-table td{padding:0.5em 0.6em;border-bottom:1px solid var(--border);}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table .good{color:var(--green);}
+.cmp-table .bad{color:var(--red);}
+.cmp-table .highlight-row td{background:var(--mint-dim);}
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- TITLE -->
+<section>
+  <div class="title-meta">Natural Language Processing · Session 07 / 08</div>
+  <h1>Transformers and BERT</h1>
+  <h3>Self-Attention · Transformer Architecture · Pre-training · Fine-tuning</h3>
+  <p style="color:var(--text-dim);font-size:0.55em;margin-top:1.2em;">Oscar de Felice &nbsp;·&nbsp; Head of AI, WhiteLab Genomics</p>
+  <div style="margin-top:1em;">
+    <span class="title-tag">self-attention</span>
+    <span class="title-tag">Q K V</span>
+    <span class="title-tag">positional encoding</span>
+    <span class="title-tag">multi-head</span>
+    <span class="title-tag">bert</span>
+    <span class="title-tag">distilbert</span>
+    <span class="title-tag">fine-tuning</span>
+    <span class="title-tag">sst-2</span>
+  </div>
+</section>
+
+<!-- AGENDA -->
+<section>
+  <h2>Today — ~60 min theory</h2>
+  <div class="cols cols-2" style="font-size:0.76em;margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">00 · From RNN attention to self-attention</div>The last bottleneck: recurrence. Can attention work without RNNs?</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">01 · Self-attention</div>Query, Key, Value. Every token attends to every other token.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">02 · Transformer architecture</div>Encoder stack. Positional encoding. Feed-forward layers. Residuals.</div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">03 · BERT and pre-training</div>Masked language modelling. Next sentence prediction. Why it works.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">04 · Fine-tuning DistilBERT</div>Transfer learning at scale. Adding a classification head.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">05 · What's left</div>Limitations. GPT vs BERT. Course retrospective.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 00 -->
+<section class="section-slide">
+  <span class="section-num">00</span>
+  <h2>The last bottleneck</h2>
+  <p style="color:var(--text-dim);font-size:0.58em;">Attention fixed the fixed-vector problem. Recurrence itself is still a problem.</p>
+</section>
+
+<section>
+  <h2>What attention did not fix</h2>
+  <div style="font-size:0.78em;">
+    <div class="hbox gold" style="margin-bottom:0.5em;">
+      Session 06 added attention to the LSTM seq2seq model. The decoder can now look at all encoder states.
+      But the encoder itself is still a recurrent network — and recurrence has a fundamental cost.
+    </div>
+    <div class="cols cols-2">
+      <div class="card red" style="margin-bottom:0.5em;">
+        <div class="card-title">The recurrence bottleneck</div>
+        To compute <code>h_t</code> you must first have <code>h_{t-1}</code>.<br/>
+        Steps cannot be parallelised across the sequence.<br/><br/>
+        For a document of 512 tokens: 512 sequential LSTM steps.
+        Modern GPUs are built for massive parallelism — the sequential
+        dependency leaves most hardware idle.<br/><br/>
+        Training BERT-scale models on LSTMs would take months.
+        Transformers train in days because they parallelise completely.
+      </div>
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">The Transformer insight (Vaswani et al., 2017)</div>
+          <em>"Attention is all you need."</em><br/><br/>
+          Remove the RNN entirely.<br/>
+          Compute attention between every pair of positions simultaneously.<br/>
+          All positions are processed in parallel.<br/><br/>
+          <code>h_i</code> can attend to <code>h_j</code> for any <em>j</em>
+          — no decay over distance, no vanishing gradient across the sequence.
+        </div>
+        <div class="hbox">
+          <strong>Key difference from S06 attention:</strong>
+          In S06, attention was between decoder states and encoder states (cross-attention).
+          In the Transformer encoder, each position attends to every other position
+          in the <em>same</em> sequence — this is <strong>self-attention</strong>.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 01 -->
+<section class="section-slide">
+  <span class="section-num">01</span>
+  <h2>Self-Attention</h2>
+  <p style="color:var(--text-dim);font-size:0.58em;">Query · Key · Value · Every token attends to every other token simultaneously.</p>
+</section>
+
+<section>
+  <h2>Self-attention — the intuition</h2>
+  <div style="font-size:0.78em;">
+    <div class="hbox" style="margin-bottom:0.5em;">
+      In the sentence <em>"The animal didn't cross the street because it was too tired"</em>,
+      what does <em>it</em> refer to? <em>animal</em> or <em>street</em>?
+      Self-attention lets the model look at the whole sentence simultaneously
+      and build a representation of <em>it</em> that incorporates context from <em>animal</em>.
+    </div>
+    <div class="cols cols-2">
+      <div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">The database analogy</div>
+          Think of self-attention as a soft database query:<br/><br/>
+          <strong>Query Q</strong>: what am I looking for?<br/>
+          <strong>Key K</strong>: what does each entry offer?<br/>
+          <strong>Value V</strong>: what does each entry contain?<br/><br/>
+          For each position, Q is compared against all K's to get relevance scores.
+          The output is a weighted sum of V's — a soft retrieval.
+        </div>
+        <div class="card gold">
+          <div class="card-title">The formulas</div>
+          For a sequence of <em>n</em> tokens, embed to matrix <code>X</code> (n × d).<br/><br/>
+          Project to Q, K, V with learned weight matrices:
+          <div class="formula">Q = X·W_Q   K = X·W_K   V = X·W_V</div>
+          Compute attention:
+          <div class="formula">Attention(Q,K,V) = softmax( Q·K^T / √d_k ) · V</div>
+          <code>√d_k</code>: scaling factor to prevent large dot products saturating softmax.
+        </div>
+      </div>
+      <div>
+        <div class="card navy">
+          <div class="card-title">Parallelism</div>
+          Q·K^T is a single matrix multiplication: n×d times d×n = n×n.<br/>
+          All n² attention scores are computed simultaneously.<br/>
+          Then softmax, then another matrix multiply with V.<br/><br/>
+          No loop, no sequential dependency.
+          The entire self-attention for a sequence of 512 tokens
+          is three matrix multiplications — fully parallelisable on GPU.
+        </div>
+        <div class="card red" style="margin-top:0.5em;">
+          <div class="card-title">Quadratic cost</div>
+          The n×n attention matrix is O(n²) in memory and compute.
+          For 512 tokens: 262K entries. For 4K tokens: 16M entries.<br/><br/>
+          This is why standard BERT is limited to 512 tokens.
+          Efficient Transformers (Longformer, BigBird) use sparse attention patterns to scale.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Self-attention diagram -->
+<section>
+  <h2>Self-attention — one head visualised</h2>
+  <p style="font-size:0.6em;color:var(--text-dim);margin:0 0 0.3em 0;">Each token computes Q, K, V. Every token attends to every other. Output is a weighted sum of all V's.</p>
+  <svg viewBox="0 0 680 290" style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4a5568" stroke-width="1.5" stroke-linecap="round"/></marker>
+      <marker id="amint" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#56c8ba" stroke-width="1.5" stroke-linecap="round"/></marker>
+    </defs>
+    <!-- Input tokens -->
+    <text x="340" y="18" font-family="sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">Input embeddings X</text>
+    <rect x="60"  y="26" width="80" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="100" y="47" font-family="monospace" font-size="12" fill="#56c8ba" text-anchor="middle">The</text>
+    <rect x="178" y="26" width="80" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="218" y="47" font-family="monospace" font-size="12" fill="#56c8ba" text-anchor="middle">cat</text>
+    <rect x="296" y="26" width="80" height="34" rx="5" fill="#3d2e0f" stroke="#e8c47a" stroke-width="1"/>
+    <text x="336" y="47" font-family="monospace" font-size="12" fill="#e8c47a" text-anchor="middle">sat</text>
+    <rect x="414" y="26" width="80" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="454" y="47" font-family="monospace" font-size="12" fill="#56c8ba" text-anchor="middle">on</text>
+    <rect x="532" y="26" width="80" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="572" y="47" font-family="monospace" font-size="12" fill="#56c8ba" text-anchor="middle">mat</text>
+
+    <!-- Q K V projections for "sat" -->
+    <text x="336" y="84" font-family="sans-serif" font-size="10" fill="#e8c47a" text-anchor="middle">Q  K  V</text>
+    <line x1="336" y1="60" x2="336" y2="78" stroke="#e8c47a" stroke-width="1" marker-end="url(#a0)"/>
+
+    <!-- Attention scores (sat attending to all) -->
+    <text x="340" y="105" font-family="sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">"sat" attends to all positions: Q_sat · K_j / √d_k → softmax → α_j</text>
+
+    <!-- Score boxes -->
+    <rect x="52"  y="114" width="90" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+    <text x="97"  y="132" font-family="monospace" font-size="10" fill="#8b949e" text-anchor="middle">α(The)=0.04</text>
+    <rect x="170" y="114" width="90" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+    <text x="215" y="132" font-family="monospace" font-size="10" fill="#8b949e" text-anchor="middle">α(cat)=0.52</text>
+    <rect x="288" y="114" width="90" height="28" rx="4" fill="#3d2e0f" stroke="#e8c47a" stroke-width="0.6"/>
+    <text x="333" y="132" font-family="monospace" font-size="10" fill="#e8c47a" text-anchor="middle">α(sat)=0.30</text>
+    <rect x="406" y="114" width="90" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+    <text x="451" y="132" font-family="monospace" font-size="10" fill="#8b949e" text-anchor="middle">α(on)=0.08</text>
+    <rect x="524" y="114" width="90" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+    <text x="569" y="132" font-family="monospace" font-size="10" fill="#8b949e" text-anchor="middle">α(mat)=0.06</text>
+
+    <!-- Weighted V sum -->
+    <text x="340" y="162" font-family="sans-serif" font-size="10" fill="#8b949e" text-anchor="middle">Context output = Σ_j α_j · V_j</text>
+    <line x1="97"  y1="142" x2="310" y2="170" stroke="#4a5568" stroke-width="0.5" stroke-dasharray="3 2" opacity="0.4"/>
+    <line x1="215" y1="142" x2="325" y2="170" stroke="#56c8ba" stroke-width="1.2" stroke-dasharray="3 2" opacity="0.7"/>
+    <line x1="333" y1="142" x2="340" y2="170" stroke="#e8c47a" stroke-width="1.0" stroke-dasharray="3 2" opacity="0.8"/>
+    <line x1="451" y1="142" x2="355" y2="170" stroke="#4a5568" stroke-width="0.5" stroke-dasharray="3 2" opacity="0.4"/>
+    <line x1="569" y1="142" x2="370" y2="170" stroke="#4a5568" stroke-width="0.3" stroke-dasharray="3 2" opacity="0.3"/>
+
+    <rect x="270" y="170" width="140" height="36" rx="6" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+    <text x="340" y="192" font-family="monospace" font-size="11" fill="#c084fc" text-anchor="middle">output("sat")</text>
+
+    <!-- Feed forward -->
+    <line x1="340" y1="206" x2="340" y2="222" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="220" y="222" width="240" height="36" rx="6" fill="#161b22" stroke="#30363d" stroke-width="0.7"/>
+    <text x="340" y="244" font-family="monospace" font-size="11" fill="#e6edf3" text-anchor="middle">FFN → contextualised "sat"</text>
+
+    <text x="340" y="278" font-family="sans-serif" font-size="11" fill="#8b949e" text-anchor="middle">This representation of "sat" now incorporates information from "cat" (α=0.52) — it knows something sat down</text>
+  </svg>
+</section>
+
+<!-- SEC 02 -->
+<section class="section-slide">
+  <span class="section-num">02</span>
+  <h2>Transformer Architecture</h2>
+  <p style="color:var(--text-dim);font-size:0.58em;">Stacking self-attention blocks. Positional encoding. Feed-forward layers.</p>
+</section>
+
+<section>
+  <h2>The Transformer encoder block</h2>
+  <div style="font-size:0.76em;">
+    <div class="cols cols-2">
+      <div>
+        <svg viewBox="0 0 300 360" style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+          <defs>
+            <marker id="ba" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4a5568" stroke-width="1.5" stroke-linecap="round"/></marker>
+          </defs>
+          <!-- Input -->
+          <rect x="80" y="10" width="140" height="32" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+          <text x="150" y="30" font-family="sans-serif" font-size="11" fill="#56c8ba" text-anchor="middle">Input embedding</text>
+          <!-- Pos encoding -->
+          <line x1="150" y1="42" x2="150" y2="56" stroke="#4a5568" stroke-width="1" marker-end="url(#ba)"/>
+          <rect x="80" y="56" width="140" height="32" rx="5" fill="#3d2e0f" stroke="#e8c47a" stroke-width="0.7"/>
+          <text x="150" y="76" font-family="sans-serif" font-size="11" fill="#e8c47a" text-anchor="middle">+ Positional encoding</text>
+          <!-- Block start -->
+          <rect x="30" y="102" width="240" height="210" rx="8" fill="none" stroke="#30363d" stroke-width="0.8" stroke-dasharray="4 3"/>
+          <text x="150" y="118" font-family="monospace" font-size="9" fill="#30363d" text-anchor="middle">× N BLOCKS</text>
+          <!-- Multi-head self-attention -->
+          <line x1="150" y1="88" x2="150" y2="126" stroke="#4a5568" stroke-width="1" marker-end="url(#ba)"/>
+          <rect x="60" y="126" width="180" height="36" rx="5" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+          <text x="150" y="148" font-family="sans-serif" font-size="11" fill="#c084fc" text-anchor="middle">Multi-Head Self-Attention</text>
+          <!-- Add & Norm 1 -->
+          <line x1="150" y1="162" x2="150" y2="178" stroke="#4a5568" stroke-width="1" marker-end="url(#ba)"/>
+          <rect x="90" y="178" width="120" height="28" rx="5" fill="#161b22" stroke="#30363d" stroke-width="0.6"/>
+          <text x="150" y="196" font-family="sans-serif" font-size="10" fill="#8b949e" text-anchor="middle">Add &amp; LayerNorm</text>
+          <!-- Residual connection 1 -->
+          <path d="M60 130 Q10 130 10 192 Q10 206 90 206" fill="none" stroke="#56c8ba" stroke-width="0.7" stroke-dasharray="3 2" opacity="0.5"/>
+          <text x="14" y="172" font-family="sans-serif" font-size="9" fill="#56c8ba" opacity="0.6">residual</text>
+          <!-- Feed-forward -->
+          <line x1="150" y1="206" x2="150" y2="222" stroke="#4a5568" stroke-width="1" marker-end="url(#ba)"/>
+          <rect x="60" y="222" width="180" height="36" rx="5" fill="#3d1212" stroke="#f47067" stroke-width="0.7"/>
+          <text x="150" y="244" font-family="sans-serif" font-size="11" fill="#f47067" text-anchor="middle">Feed-Forward (×2 Dense)</text>
+          <!-- Add & Norm 2 -->
+          <line x1="150" y1="258" x2="150" y2="274" stroke="#4a5568" stroke-width="1" marker-end="url(#ba)"/>
+          <rect x="90" y="274" width="120" height="28" rx="5" fill="#161b22" stroke="#30363d" stroke-width="0.6"/>
+          <text x="150" y="292" font-family="sans-serif" font-size="10" fill="#8b949e" text-anchor="middle">Add &amp; LayerNorm</text>
+          <!-- Residual connection 2 -->
+          <path d="M60 226 Q10 226 10 288 Q10 302 90 302" fill="none" stroke="#56c8ba" stroke-width="0.7" stroke-dasharray="3 2" opacity="0.5"/>
+          <!-- Output -->
+          <line x1="150" y1="316" x2="150" y2="332" stroke="#4a5568" stroke-width="1" marker-end="url(#ba)"/>
+          <rect x="80" y="332" width="140" height="28" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.7"/>
+          <text x="150" y="350" font-family="sans-serif" font-size="11" fill="#56c8ba" text-anchor="middle">Contextualised output</text>
+        </svg>
+      </div>
+      <div style="font-size:0.88em;">
+        <div class="card purple" style="margin-bottom:0.5em;">
+          <div class="card-title">Multi-Head Self-Attention</div>
+          Run H parallel attention heads, each with its own W_Q, W_K, W_V.<br/>
+          Concatenate outputs, project back to model dimension.<br/><br/>
+          Multiple heads allow the model to attend to different aspects simultaneously:
+          one head for syntax, one for coreference, one for semantics.
+        </div>
+        <div class="card gold" style="margin-bottom:0.5em;">
+          <div class="card-title">Positional Encoding</div>
+          Self-attention is permutation-invariant — it does not know token order.<br/>
+          Add a sinusoidal position vector to each embedding:<br/><br/>
+          <div class="formula" style="font-size:0.75em;">PE(pos, 2i)   = sin(pos / 10000^{2i/d})</div>
+          <div class="formula" style="font-size:0.75em;">PE(pos, 2i+1) = cos(pos / 10000^{2i/d})</div>
+          Each position gets a unique pattern. The model learns to use it.
+        </div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">Residual connections + LayerNorm</div>
+          <code>output = LayerNorm(x + Sublayer(x))</code><br/><br/>
+          Residuals make gradients flow directly to earlier layers.
+          LayerNorm stabilises training.
+          Without them, very deep Transformers (12+ layers) do not converge.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 03 -->
+<section class="section-slide">
+  <span class="section-num">03</span>
+  <h2>BERT and Pre-training</h2>
+  <p style="color:var(--text-dim);font-size:0.58em;">Learning from unlabelled text at massive scale.</p>
+</section>
+
+<section>
+  <h2>From Transformer to BERT</h2>
+  <div style="font-size:0.76em;">
+    <div class="hbox" style="margin-bottom:0.5em;">
+      Vaswani et al. (2017) introduced the Transformer for translation (encoder + decoder).
+      Devlin et al. (2018) took only the encoder stack and pre-trained it
+      on 3.3 billion words of unlabelled text — this is BERT.
+    </div>
+    <div class="cols cols-3">
+      <div class="card mint">
+        <div class="card-title">Architecture</div>
+        BERT-base:<br/>
+        12 Transformer encoder blocks<br/>
+        12 attention heads<br/>
+        Hidden size 768<br/>
+        <strong>110M parameters</strong><br/><br/>
+        BERT-large: 24 blocks, 1024 hidden, 340M params.
+        DistilBERT: 6 blocks, 66M params, 97% of BERT performance.
+      </div>
+      <div class="card gold">
+        <div class="card-title">Pre-training task 1: MLM</div>
+        <strong>Masked Language Modelling:</strong><br/>
+        Randomly mask 15% of tokens.<br/>
+        Predict the masked token from context.<br/><br/>
+        Input: "The [MASK] sat on the mat"<br/>
+        Target: predict "cat"<br/><br/>
+        Forces the model to build deep bidirectional context representations.
+      </div>
+      <div class="card navy">
+        <div class="card-title">Pre-training task 2: NSP</div>
+        <strong>Next Sentence Prediction:</strong><br/>
+        Given two sentences A and B:<br/>
+        Is B the actual next sentence after A?<br/><br/>
+        50% of pairs: consecutive (positive).<br/>
+        50% of pairs: random (negative).<br/><br/>
+        Teaches the model sentence-level relationships.
+      </div>
+    </div>
+    <div class="hbox" style="margin-top:0.5em;">
+      <strong>The key insight:</strong> pre-training on unlabelled text is free and scales arbitrarily.
+      BERT was trained on Wikipedia + BookCorpus for 4 days on 64 TPU chips.
+      You inherit all that knowledge and add a thin classification head on top.
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Contextual embeddings — why BERT beats GloVe</h2>
+  <div style="font-size:0.76em;">
+    <div class="cols cols-2">
+      <div>
+        <div class="card red" style="margin-bottom:0.5em;">
+          <div class="card-title">GloVe — static embeddings</div>
+          "bank" has one vector regardless of context.<br/><br/>
+          "I went to the river <strong>bank</strong>" → same vector as<br/>
+          "I deposited money at the <strong>bank</strong>"<br/><br/>
+          The embedding is a property of the word, not the sentence.
+          Polysemy is unresolvable.
+        </div>
+        <div class="card red">
+          <div class="card-title">LSTM — partially contextual</div>
+          "bank" in position <em>i</em> is influenced by tokens 1 to <em>i</em>
+          (and 1 to <em>i</em> from the right in bidirectional LSTM).<br/><br/>
+          Better than GloVe, but still trained on one task at a time.
+          No transfer from the rich signal of 3B words of general text.
+        </div>
+      </div>
+      <div>
+        <div class="card mint">
+          <div class="card-title">BERT — deeply contextual</div>
+          "bank" has a <em>different</em> vector in every sentence it appears in.<br/><br/>
+          "I went to the river <strong>bank</strong>": the 12 self-attention layers
+          integrate signals from <em>river</em>, <em>went</em>, and every other token
+          bidirectionally. The representation knows it is a geographic feature.<br/><br/>
+          "I deposited money at the <strong>bank</strong>": integrates <em>deposited</em>,
+          <em>money</em>. The representation knows it is a financial institution.<br/><br/>
+          Same word, completely different vectors.
+          <strong>This is contextualisation.</strong>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 04 -->
+<section class="section-slide">
+  <span class="section-num">04</span>
+  <h2>Fine-tuning DistilBERT</h2>
+  <p style="color:var(--text-dim);font-size:0.58em;">Transfer learning at scale. One pre-trained model, many tasks.</p>
+</section>
+
+<section>
+  <h2>Fine-tuning paradigm</h2>
+  <div style="font-size:0.76em;">
+    <div class="hbox" style="margin-bottom:0.5em;">
+      <strong>Fine-tuning</strong>: start from a pre-trained model and continue training
+      on your labelled task data. The pre-trained weights are updated (all or partially).
+    </div>
+    <div class="cols cols-3">
+      <div class="card">
+        <div class="card-title">Pre-trained model</div>
+        DistilBERT: 66M parameters,<br/>pre-trained on 3.3B words.<br/>
+        Already encodes:<br/>
+        — syntax and grammar<br/>
+        — entity recognition<br/>
+        — coreference<br/>
+        — semantic similarity<br/>
+        — world knowledge<br/><br/>
+        Downloaded in seconds from HuggingFace Hub.
+      </div>
+      <div class="card gold">
+        <div class="card-title">Classification head</div>
+        Add a thin head on top of the <code>[CLS]</code> token output:<br/><br/>
+        <code>[CLS] → Dropout → Dense(2, softmax)</code><br/><br/>
+        The <code>[CLS]</code> token is prepended to every input.
+        After 6 Transformer blocks it accumulates a summary of the whole sequence.
+        This is what you classify on.
+      </div>
+      <div class="card mint">
+        <div class="card-title">Training</div>
+        SST-2 dataset: 67K movie reviews, binary sentiment.<br/><br/>
+        Fine-tune with small learning rate (2e-5 to 5e-5).<br/>
+        2–3 epochs is usually enough.<br/>
+        Colab free GPU: ~15 min.<br/><br/>
+        Typical result: 91–93% accuracy on SST-2 val set.<br/>
+        Compare: LR + TF-IDF on SST-2 ≈ 85–87%.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>DistilBERT fine-tuning — code</h2>
+  <div style="font-size:0.72em;">
+    <div class="cols cols-2">
+      <div>
+<pre><code class="language-python">from transformers import (
+    DistilBertTokenizerFast,
+    TFDistilBertForSequenceClassification,
+)
+from datasets import load_dataset
+import tensorflow as tf
+
+# ── Load dataset ──────────────────────
+sst2 = load_dataset("stanfordnlp/sst2")
+
+# ── Tokenise ──────────────────────────
+tokenizer = DistilBertTokenizerFast.from_pretrained(
+    "distilbert-base-uncased"
+)
+
+def tokenise(batch):
+    return tokenizer(
+        batch["sentence"],
+        truncation=True,
+        padding="max_length",
+        max_length=128,
+    )
+
+sst2_enc = sst2.map(tokenise, batched=True)</code></pre>
+      </div>
+      <div>
+<pre><code class="language-python"># ── Model ─────────────────────────────
+model = TFDistilBertForSequenceClassification.from_pretrained(
+    "distilbert-base-uncased",
+    num_labels=2,
+)
+
+model.compile(
+    optimizer=tf.keras.optimizers.Adam(2e-5),
+    loss=tf.keras.losses.SparseCategoricalCrossentropy(
+        from_logits=True
+    ),
+    metrics=["accuracy"],
+)
+
+# ── Fine-tune ─────────────────────────
+model.fit(
+    train_tf_dataset,
+    validation_data=val_tf_dataset,
+    epochs=3,
+)
+# → val accuracy ≈ 91-93%</code></pre>
+      </div>
+    </div>
+    <div class="hbox" style="margin-top:0.4em;">
+      <strong>In the TP:</strong> you implement the full pipeline. The TP guides you through
+      tokenisation, dataset conversion to tf.data, training, and evaluation.
+      You also compare the result to your Session 03 LR baseline on the same task.
+    </div>
+  </div>
+</section>
+
+<!-- SEC 05 -->
+<section class="section-slide">
+  <span class="section-num">05</span>
+  <h2>What's Left — and What's Next</h2>
+  <p style="color:var(--text-dim);font-size:0.58em;">Limits. GPT vs BERT. The landscape beyond this course.</p>
+</section>
+
+<section>
+  <h2>BERT vs GPT — two flavours of Transformer</h2>
+  <div style="font-size:0.76em;">
+    <div class="cols cols-2">
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">BERT — encoder only, bidirectional</div>
+          Reads the whole sequence at once.<br/>
+          Each token attends to all other tokens (left + right).<br/>
+          Pre-training: masked language modelling (fill in the blank).<br/><br/>
+          <strong>Good for:</strong> classification, NER, QA, anything that reads and understands.<br/>
+          <strong>Cannot:</strong> generate text (no left-to-right decoder).
+        </div>
+        <div class="card gold">
+          <div class="card-title">GPT — decoder only, causal</div>
+          Generates text left to right.<br/>
+          Each token attends only to previous tokens (causal mask).<br/>
+          Pre-training: next token prediction (language modelling).<br/><br/>
+          <strong>Good for:</strong> text generation, dialogue, code, instruction following.<br/>
+          <strong>Less good for:</strong> classification tasks where bidirectionality matters.
+        </div>
+      </div>
+      <div>
+        <div class="card navy">
+          <div class="card-title">The limits of this course's models</div>
+          Even fine-tuned DistilBERT:<br/>
+          — 512 token context window<br/>
+          — No document-level reasoning<br/>
+          — No tool use or retrieval<br/>
+          — No multilinguality (base model)<br/>
+          — Hallucination: does not apply (discriminative), but classification on out-of-distribution inputs fails silently<br/><br/>
+          Modern LLMs (GPT-4, Claude, Gemini) address many of these,
+          but the core attention mechanism is identical to what you built in TP-06.
+        </div>
+        <div class="hbox" style="margin-top:0.5em;">
+          <strong>The core insight you now have:</strong><br/>
+          Transformers = stacked self-attention + feed-forward + residuals + LayerNorm.<br/>
+          Scale up: 12 → 96 blocks, 768 → 12288 hidden, billions of parameters.<br/>
+          The architecture does not change. The capability emerges from scale.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- COMPARISON TABLE -->
+<section>
+  <h2>Course retrospective — the full arc</h2>
+  <div style="font-size:0.66em;">
+    <table class="cmp-table">
+      <tr><th>Session</th><th>Model</th><th>Order</th><th>Semantics</th><th>Context</th><th>AG News F1</th><th>Key limitation</th></tr>
+      <tr><td>S01</td><td>Majority baseline</td><td class="bad">✗</td><td class="bad">✗</td><td class="bad">✗</td><td class="bad">~0.25</td><td>No model</td></tr>
+      <tr><td>S03</td><td>LR + TF-IDF</td><td class="bad">✗</td><td class="bad">✗</td><td class="bad">✗</td><td class="good">~0.89</td><td>No semantics, no order</td></tr>
+      <tr><td>S04</td><td>GloVe mean pool</td><td class="bad">✗</td><td class="good">✓ static</td><td class="bad">✗</td><td>~0.86</td><td>Static, no order</td></tr>
+      <tr><td>S05</td><td>LSTM</td><td class="good">✓</td><td class="good">✓</td><td class="bad">limited</td><td>← TP</td><td>Sequential, vanishing gradient</td></tr>
+      <tr><td>S06</td><td>LSTM + Attention</td><td class="good">✓</td><td class="good">✓</td><td class="good">✓</td><td>← TP</td><td>Still sequential</td></tr>
+      <tr class="highlight-row"><td>S07</td><td>DistilBERT</td><td class="good">✓</td><td class="good">✓ deep</td><td class="good">✓ full</td><td>← TP</td><td>Compute, 512 token limit</td></tr>
+    </table>
+    <div class="hbox" style="margin-top:0.6em;">
+      <strong>Each session fixed one limitation of the previous model.</strong>
+      The arc: no features → sparse features → dense static → dense sequential → dense sequential with attention → dense parallel with deep context.
+      Session 08 applies all of this to a real-world NLP pipeline.
+    </div>
+  </div>
+</section>
+
+<!-- TP BRIDGE -->
+<section>
+  <h2>TP 07 — what you will build</h2>
+  <div style="font-size:0.76em;">
+    <div class="cols cols-2" style="margin-bottom:0.5em;">
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">Dataset — SST-2</div>
+          67K movie review sentences.<br/>
+          Binary sentiment: positive / negative.<br/>
+          Standard NLP benchmark.<br/><br/>
+          Mean sentence length: 19 tokens.<br/>
+          Loaded via <code>load_dataset("stanfordnlp/sst2")</code>.<br/>
+          Train: 67K, val: 872, test (no labels): 1.8K.
+        </div>
+        <div class="card gold">
+          <div class="card-title">What you implement</div>
+          <code>tokenise_dataset</code>: apply DistilBERT tokenizer<br/>
+          <code>to_tf_dataset</code>: convert to <code>tf.data.Dataset</code><br/>
+          <code>build_model</code>: load DistilBERT + add head<br/>
+          <code>evaluate</code>: accuracy, F1, confusion matrix<br/>
+          <code>predict_sentiment</code>: inference on new text<br/>
+          Comparison table: DistilBERT vs LR+TF-IDF on SST-2
+        </div>
+      </div>
+      <div>
+        <div class="card navy">
+          <div class="card-title">Model</div>
+          <code>TFDistilBertForSequenceClassification</code><br/>
+          from HuggingFace Transformers.<br/><br/>
+          Pre-trained: <code>distilbert-base-uncased</code><br/>
+          Head: <code>[CLS] → Dropout(0.1) → Dense(2)</code><br/>
+          Loss: <code>SparseCategoricalCrossentropy(from_logits=True)</code><br/>
+          Optimizer: Adam, lr=2e-5<br/>
+          Epochs: 3<br/>
+          Batch size: 32<br/>
+          Expected val accuracy: 91–93%<br/>
+          Training time: ~15 min on Colab GPU
+        </div>
+        <div class="hbox" style="margin-top:0.5em;">
+          <strong>Compute note:</strong> this TP requires a GPU.
+          On Colab: Runtime → Change runtime type → GPU (T4).
+          Training on CPU would take ~3 hours — not recommended.
+        </div>
+      </div>
+    </div>
+    <div style="text-align:center;margin-top:0.3em;">
+      <span class="pill pill-mint">self-attention</span>
+      <span class="pill pill-gold">fine-tuning</span>
+      <span class="pill pill-navy">distilbert</span>
+      <span class="pill pill-purple">sst-2</span>
+      <span class="pill pill-mint">transfer learning</span>
+      <span class="pill pill-gold">CLS token</span>
+    </div>
+  </div>
+</section>
+
+</div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+<script>
+  Reveal.initialize({hash:true,slideNumber:'c/t',progress:true,center:true,transition:'fade',transitionSpeed:'fast',width:1200,height:700,margin:0.06,minScale:0.1,plugins:[RevealHighlight,RevealNotes]});
+  Reveal.addEventListener('ready',function(){document.querySelectorAll('.reveal .slides section').forEach(function(s){s.style.zoom='1';});});
+</script>
+</body>
+</html>

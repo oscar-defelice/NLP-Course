@@ -1,0 +1,676 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>NLP — Session 06: Attention</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@400;500&family=DM+Sans:ital,wght@0,300;0,400;0,500;1,300&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/theme/black.min.css"/>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/monokai.min.css"/>
+<style>
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--mint:#56c8ba;--mint-dim:#1e4a45;--navy:#4a6fc8;--navy-dim:#1a2740;--gold:#e8c47a;--gold-dim:#3d2e0f;--text:#e6edf3;--text-dim:#8b949e;--red:#f47067;--red-dim:#3d1212;--purple:#c084fc;--purple-dim:#2d1a40;--green:#7ee787;--green-dim:#122d1a;}
+.reveal-viewport{background:var(--bg);}
+.reveal{font-family:'DM Sans',sans-serif;font-size:34px;color:var(--text);}
+.reveal h1,.reveal h2,.reveal h3{font-family:'DM Serif Display',serif;text-transform:none;letter-spacing:-0.01em;color:var(--text);margin-bottom:0.4em;}
+.reveal h1{font-size:1.9em;line-height:1.1;}
+.reveal h2{font-size:1.25em;color:var(--mint);}
+.reveal h3{font-size:0.95em;color:var(--gold);font-style:italic;}
+.reveal p{font-weight:300;line-height:1.5;margin:0.3em 0;}
+.reveal li{font-weight:300;line-height:1.5;margin:0.2em 0;}
+.reveal strong{font-weight:500;color:var(--mint);}
+.reveal em{color:var(--gold);font-style:italic;}
+.reveal code{font-family:'DM Mono',monospace;font-size:0.76em;background:var(--surface);padding:0.1em 0.35em;border-radius:4px;color:var(--mint);}
+.reveal pre{margin:0.5em auto;box-shadow:none;width:100%;}
+.reveal pre code{font-size:0.68em;border-radius:8px;padding:0.9em 1.1em;background:var(--surface);border:1px solid var(--border);max-height:380px;overflow:auto;}
+.reveal ul{list-style:none;padding:0;margin:0.3em 0;}
+.reveal ul li::before{content:"›";color:var(--mint);margin-right:0.4em;font-weight:500;}
+.reveal ul ul li::before{content:"·";color:var(--text-dim);}
+.reveal a{color:var(--mint);text-decoration:none;border-bottom:1px solid var(--mint-dim);}
+.reveal .slide-number{color:var(--text-dim);font-family:'DM Mono',monospace;font-size:0.5em;}
+.reveal .progress{color:var(--mint);height:3px;}
+.section-slide{background:var(--navy-dim) !important;}
+.section-slide h2{font-size:1.9em;color:var(--text);}
+.section-num{display:block;font-family:'DM Mono',monospace;font-size:0.45em;color:var(--mint);letter-spacing:0.18em;text-transform:uppercase;margin-bottom:0.6em;}
+.cols{display:grid;gap:1.2em;}
+.cols-2{grid-template-columns:1fr 1fr;}
+.cols-3{grid-template-columns:1fr 1fr 1fr;}
+.cols-6040{grid-template-columns:60fr 40fr;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:0.65em 0.9em;font-size:0.76em;}
+.card-title{font-family:'DM Mono',monospace;font-size:0.72em;letter-spacing:0.1em;text-transform:uppercase;color:var(--text-dim);margin-bottom:0.4em;}
+.card.gold{border-color:var(--gold-dim);background:#1a160a;}
+.card.navy{border-color:var(--navy-dim);background:#0e1420;}
+.card.red{border-color:var(--red-dim);background:#1a0d0d;}
+.card.mint{border-color:var(--mint-dim);background:#0d1e1c;}
+.card.purple{border-color:var(--purple-dim);background:#180d2a;}
+.hbox{background:var(--surface);border-left:3px solid var(--mint);border-radius:6px;padding:0.55em 0.9em;font-size:0.76em;}
+.hbox.gold{border-left-color:var(--gold);}
+.hbox.red{border-left-color:var(--red);}
+.hbox.purple{border-left-color:var(--purple);}
+.formula{font-family:'DM Mono',monospace;font-size:0.82em;background:var(--surface);border:1px solid var(--border);border-radius:6px;padding:0.4em 0.8em;margin:0.4em 0;color:var(--gold);}
+.pill{display:inline-block;font-family:'DM Mono',monospace;font-size:0.32em;padding:0.25em 0.8em;border-radius:99px;margin:0.15em;letter-spacing:0.08em;}
+.pill-mint{background:var(--mint-dim);color:var(--mint);border:1px solid var(--mint);}
+.pill-gold{background:var(--gold-dim);color:var(--gold);border:1px solid var(--gold);}
+.pill-navy{background:var(--navy-dim);color:var(--navy);border:1px solid var(--navy);}
+.pill-purple{background:var(--purple-dim);color:var(--purple);border:1px solid var(--purple);}
+.pill-red{background:var(--red-dim);color:var(--red);border:1px solid var(--red);}
+.title-meta{font-family:'DM Mono',monospace;font-size:0.36em;color:var(--text-dim);letter-spacing:0.12em;text-transform:uppercase;margin-bottom:0.9em;}
+.title-tag{display:inline-block;border:1px solid var(--mint-dim);color:var(--mint);padding:0.18em 0.7em;border-radius:4px;font-family:'DM Mono',monospace;font-size:0.36em;letter-spacing:0.08em;margin:0.2em;}
+.cmp-table{width:100%;border-collapse:collapse;font-size:0.68em;}
+.cmp-table th{font-family:'DM Mono',monospace;font-size:0.85em;color:var(--text-dim);letter-spacing:0.08em;padding:0.4em 0.6em;border-bottom:1px solid var(--border);text-align:left;}
+.cmp-table td{padding:0.5em 0.6em;border-bottom:1px solid var(--border);}
+.cmp-table tr:last-child td{border-bottom:none;}
+.cmp-table .good{color:var(--green);}
+.cmp-table .bad{color:var(--red);}
+.cmp-table .highlight-row td{background:var(--mint-dim);}
+</style>
+</head>
+<body>
+<div class="reveal"><div class="slides">
+
+<!-- TITLE -->
+<section>
+  <div class="title-meta">Natural Language Processing · Session 06 / 08</div>
+  <h1>Attention</h1>
+  <h3 style="margin-top:0.2em;">Bottleneck · Bahdanau · Alignment · Keras Functional API</h3>
+  <p style="color:var(--text-dim);font-size:0.55em;margin-top:1.2em;">Oscar de Felice &nbsp;·&nbsp; Head of AI, WhiteLab Genomics</p>
+  <div style="margin-top:1em;">
+    <span class="title-tag">encoder-decoder</span>
+    <span class="title-tag">context vector</span>
+    <span class="title-tag">alignment scores</span>
+    <span class="title-tag">bahdanau</span>
+    <span class="title-tag">attention map</span>
+    <span class="title-tag">functional api</span>
+    <span class="title-tag">teacher forcing</span>
+  </div>
+</section>
+
+<!-- AGENDA -->
+<section>
+  <h2>Today — ~60 min theory</h2>
+  <div class="cols cols-2" style="font-size:0.76em;margin-top:0.4em;">
+    <div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">00 · Recap</div>LSTM: what it solved. What it still cannot do.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">01 · The bottleneck problem</div>Seq2seq without attention. One vector for an entire sentence.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">02 · Bahdanau attention</div>Alignment scores, softmax weights, context vector. Full derivation.</div>
+    </div>
+    <div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">03 · Attention maps</div>Reading alignment. What the model has learned to look at.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">04 · Keras Functional API</div>Why Sequential fails. Building encoder-decoder in Keras.</div>
+      <div class="card" style="margin-bottom:0.55em;"><div class="card-title">05 · Limits and what's next</div>Attention is still sequential. The case for self-attention.</div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 00 RECAP -->
+<section class="section-slide"><span class="section-num">00</span><h2>Recap: LSTM</h2><p style="color:var(--text-dim);font-size:0.58em;">What we have. What is still missing.</p></section>
+
+<section>
+  <h2>What LSTM gave us — and what it didn't</h2>
+  <div style="font-size:0.78em;">
+    <div class="cols cols-2">
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">What LSTM solved</div>
+          Vanishing gradients over short-to-medium sequences.<br/><br/>
+          Word order respected: "not happy" ≠ "happy".<br/><br/>
+          Cell state as long-term memory across dozens of steps.
+        </div>
+        <div class="card gold">
+          <div class="card-title">LSTM seq2seq setup</div>
+          <strong>Encoder:</strong> reads source, produces final hidden state.<br/><br/>
+          <strong>Decoder:</strong> takes that state, generates target one token at a time.<br/><br/>
+          "The cat sat on the mat" → <code>[h₆, c₆]</code> → "Le chat était assis sur le tapis"
+        </div>
+      </div>
+      <div>
+        <div class="card red">
+          <div class="card-title">What LSTM still cannot do</div>
+          The encoder compresses the <em>entire</em> source into a single fixed-size vector — the last hidden state.<br/><br/>
+          For short sentences this works. For a 30-word sentence, one 256-dim vector must encode everything.<br/><br/>
+          The decoder is completely blind to intermediate encoder states.<br/><br/>
+          Information from early tokens is lost before the decoder needs it.
+        </div>
+        <div class="hbox red" style="margin-top:0.5em;"><strong>This is the bottleneck.</strong> One vector — too much to compress into.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 01 BOTTLENECK -->
+<section class="section-slide"><span class="section-num">01</span><h2>The Bottleneck Problem</h2><p style="color:var(--text-dim);font-size:0.58em;">Compressing a whole sentence into one vector.</p></section>
+
+<section>
+  <h2>Seq2seq without attention</h2>
+  <svg viewBox="0 0 680 260" style="width:100%;display:block;margin:0.3em auto 0.4em;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4a5568" stroke-width="1.5" stroke-linecap="round"/></marker>
+      <marker id="ar" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#f47067" stroke-width="1.5" stroke-linecap="round"/></marker>
+    </defs>
+    <text x="160" y="18" text-anchor="middle" font-family="monospace" font-size="10" fill="#8b949e" letter-spacing="2">ENCODER</text>
+    <rect x="22"  y="24" width="52" height="36" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="48"  y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₁</text>
+    <text x="48"  y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">The</text>
+    <line x1="74" y1="42" x2="90" y2="42" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="92"  y="24" width="52" height="36" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="118" y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₂</text>
+    <text x="118" y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">cat</text>
+    <line x1="144" y1="42" x2="160" y2="42" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="162" y="24" width="52" height="36" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="188" y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₃</text>
+    <text x="188" y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">sat</text>
+    <line x1="214" y1="42" x2="230" y2="42" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="232" y="24" width="52" height="36" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="258" y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₄</text>
+    <text x="258" y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">on</text>
+    <line x1="284" y1="42" x2="300" y2="42" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="302" y="24" width="52" height="36" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="328" y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₅</text>
+    <text x="328" y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">mat</text>
+    <line x1="354" y1="42" x2="374" y2="42" stroke="#f47067" stroke-width="1.5" marker-end="url(#ar)"/>
+    <rect x="376" y="16" width="76" height="52" rx="8" fill="#3d1212" stroke="#f47067" stroke-width="1.2"/>
+    <text x="414" y="38" text-anchor="middle" font-family="monospace" font-size="12" fill="#f47067">context</text>
+    <text x="414" y="54" text-anchor="middle" font-family="monospace" font-size="11" fill="#f47067">= h₅ only</text>
+    <text x="414" y="80" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#f47067" opacity="0.7">bottleneck ⚠</text>
+    <text x="570" y="18" text-anchor="middle" font-family="monospace" font-size="10" fill="#8b949e" letter-spacing="2">DECODER</text>
+    <line x1="452" y1="42" x2="470" y2="42" stroke="#f47067" stroke-width="1.5" marker-end="url(#ar)"/>
+    <rect x="472" y="24" width="52" height="36" rx="5" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+    <text x="498" y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#c084fc">s₁</text>
+    <text x="498" y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">Le</text>
+    <line x1="524" y1="42" x2="540" y2="42" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="542" y="24" width="52" height="36" rx="5" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+    <text x="568" y="46" text-anchor="middle" font-family="monospace" font-size="11" fill="#c084fc">s₂</text>
+    <text x="568" y="72" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">chat</text>
+    <line x1="594" y1="42" x2="610" y2="42" stroke="#4a5568" stroke-width="0.6" stroke-dasharray="3 3"/>
+    <text x="628" y="46" font-family="sans-serif" font-size="12" fill="#4a5568">…</text>
+    <rect x="22" y="96" width="636" height="52" rx="8" fill="#161b22" stroke="#f47067" stroke-width="0.5" stroke-dasharray="3 3"/>
+    <text x="340" y="118" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#e6edf3">Problem: when decoding "chat" (step 2), the decoder only sees the single context vector.</text>
+    <text x="340" y="136" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#8b949e">It has no direct access to h₂ ("cat") — the most relevant encoder state. Information is lost.</text>
+    <rect x="22"  y="162" width="300" height="84" rx="8" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+    <text x="32"  y="182" font-family="sans-serif" font-size="11" fill="#8b949e">Short sentence (5 tokens):</text>
+    <text x="32"  y="200" font-family="sans-serif" font-size="11" fill="#56c8ba">Works reasonably well.</text>
+    <text x="32"  y="218" font-family="sans-serif" font-size="11" fill="#8b949e">h₅ still carries most of the signal.</text>
+    <text x="32"  y="236" font-family="sans-serif" font-size="11" fill="#8b949e">BLEU score: decent.</text>
+    <rect x="358" y="162" width="300" height="84" rx="8" fill="#3d1212" stroke="#f47067" stroke-width="0.5"/>
+    <text x="368" y="182" font-family="sans-serif" font-size="11" fill="#8b949e">Long sentence (30+ tokens):</text>
+    <text x="368" y="200" font-family="sans-serif" font-size="11" fill="#f47067">Performance degrades sharply.</text>
+    <text x="368" y="218" font-family="sans-serif" font-size="11" fill="#8b949e">h₃₀ has forgotten what h₁ said.</text>
+    <text x="368" y="236" font-family="sans-serif" font-size="11" fill="#8b949e">BLEU score: collapses past ~20 words.</text>
+  </svg>
+</section>
+
+<!-- SEC 02 BAHDANAU -->
+<section class="section-slide"><span class="section-num">02</span><h2>Bahdanau Attention</h2><p style="color:var(--text-dim);font-size:0.58em;">Bahdanau, Cho, Bengio — ICLR 2015</p></section>
+
+<section>
+  <h2>The attention idea</h2>
+  <div style="font-size:0.78em;">
+    <div class="hbox gold" style="margin-bottom:0.6em;"><strong>Core idea:</strong> instead of compressing the encoder into one vector, keep <em>all</em> encoder hidden states and let the decoder look at all of them at each step — with learned weights.</div>
+    <div class="cols cols-2">
+      <div>
+        <div class="card" style="margin-bottom:0.5em;">
+          <div class="card-title">Without attention</div>
+          Encoder → single context vector <code>c</code><br/>
+          Decoder receives the same <code>c</code> at every step.<br/>
+          All decoder steps equally informed — or equally lost.
+        </div>
+        <div class="card mint">
+          <div class="card-title">With attention</div>
+          Encoder → <strong>sequence of hidden states</strong> <code>h₁ … hₙ</code><br/>
+          At each decoder step <em>t</em>, compute a <strong>different</strong> context vector <code>cₜ</code>
+          as a weighted sum of all encoder states.<br/><br/>
+          Weights say: <em>"when generating token t, focus on encoder positions i, j, …"</em>
+        </div>
+      </div>
+      <div>
+        <div class="card gold">
+          <div class="card-title">A human analogy</div>
+          When translating, you do not memorise the whole source before starting.<br/><br/>
+          Writing "chat" → you glance back at "cat".<br/>
+          Writing "tapis" → you glance back at "mat".<br/><br/>
+          This selective re-reading is exactly what attention computes — automatically, from gradients.
+        </div>
+        <div class="hbox" style="margin-top:0.5em;"><strong>Key property:</strong> the decoder can access any encoder state directly, regardless of distance. Long-range dependencies are no longer bottlenecked.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Bahdanau attention — full derivation</h2>
+  <div style="font-size:0.76em;">
+    <div class="hbox" style="margin-bottom:0.5em;">At decoder step <em>t</em>, decoder state is <code>sₜ</code>. Encoder produced <em>n</em> hidden states <code>h₁ … hₙ</code>. We compute a context vector <code>cₜ</code> summarising the encoder output relevant to this step.</div>
+    <div class="cols cols-2">
+      <div>
+        <div style="margin-bottom:0.6em;">
+          <div style="font-family:'DM Mono',monospace;font-size:0.72em;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3em;">Step 1 — Alignment scores</div>
+          <div class="formula">e_{t,i} = vᵀ · tanh( W₁·hᵢ + W₂·sₜ )</div>
+          Scalar score for each encoder position <em>i</em>: how relevant is <code>hᵢ</code> to the current decoder state <code>sₜ</code>?<br/>
+          <code>W₁</code>, <code>W₂</code>, <code>v</code> are learned weight matrices — the attention parameters.
+        </div>
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.72em;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3em;">Step 2 — Attention weights</div>
+          <div class="formula">α_{t,i} = exp(e_{t,i}) / Σⱼ exp(e_{t,j})</div>
+          Raw scores normalised to a probability distribution over encoder positions. All α sum to 1.<br/>
+          <code>α_{t,i}</code> = "how much to attend to position <em>i</em> at step <em>t</em>"
+        </div>
+      </div>
+      <div>
+        <div style="margin-bottom:0.6em;">
+          <div style="font-family:'DM Mono',monospace;font-size:0.72em;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3em;">Step 3 — Context vector</div>
+          <div class="formula">cₜ = Σᵢ α_{t,i} · hᵢ</div>
+          Weighted sum of all encoder hidden states. Different at every decoder step.<br/>
+          If <code>α_{t,3} = 0.85</code> → context dominated by encoder state 3.
+        </div>
+        <div>
+          <div style="font-family:'DM Mono',monospace;font-size:0.72em;color:var(--text-dim);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:0.3em;">Step 4 — Decoder update</div>
+          <div class="formula">sₜ = LSTM( [yₜ₋₁ ; cₜ], sₜ₋₁ )</div>
+          Previous output token and context vector concatenated, fed to decoder LSTM together.
+        </div>
+        <div class="hbox gold" style="margin-top:0.5em;">Everything is differentiable. Alignment weights α are learned end-to-end via backpropagation — no hand-crafted rules.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Bahdanau attention — diagram</h2>
+  <svg viewBox="0 0 680 300" style="width:100%;display:block;" xmlns="http://www.w3.org/2000/svg">
+    <defs>
+      <marker id="a0" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#4a5568" stroke-width="1.5" stroke-linecap="round"/></marker>
+      <marker id="ag" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#e8c47a" stroke-width="1.5" stroke-linecap="round"/></marker>
+      <marker id="ap" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#c084fc" stroke-width="1.5" stroke-linecap="round"/></marker>
+      <marker id="agg" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M2 1L8 5L2 9" fill="none" stroke="#7ee787" stroke-width="1.5" stroke-linecap="round"/></marker>
+    </defs>
+    <!-- ENCODER hidden states -->
+    <text x="178" y="16" text-anchor="middle" font-family="monospace" font-size="10" fill="#8b949e" letter-spacing="2">ENCODER STATES</text>
+    <rect x="28"  y="22" width="50" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="53"  y="43" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₁</text>
+    <text x="53"  y="66" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">The</text>
+    <rect x="98"  y="22" width="50" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="123" y="43" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₂</text>
+    <text x="123" y="66" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">cat</text>
+    <rect x="168" y="22" width="50" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="193" y="43" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₃</text>
+    <text x="193" y="66" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">sat</text>
+    <rect x="238" y="22" width="50" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="263" y="43" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₄</text>
+    <text x="263" y="66" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">on</text>
+    <rect x="308" y="22" width="50" height="34" rx="5" fill="#1e4a45" stroke="#56c8ba" stroke-width="0.8"/>
+    <text x="333" y="43" text-anchor="middle" font-family="monospace" font-size="11" fill="#56c8ba">h₅</text>
+    <text x="333" y="66" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#4a5568">mat</text>
+    <!-- Alpha bars -->
+    <rect x="42"  y="18" width="22" height="4"  rx="1" fill="#e8c47a" opacity="0.22"/>
+    <rect x="112" y="6"  width="22" height="16" rx="1" fill="#e8c47a" opacity="0.85"/>
+    <rect x="182" y="14" width="22" height="8"  rx="1" fill="#e8c47a" opacity="0.42"/>
+    <rect x="252" y="16" width="22" height="6"  rx="1" fill="#e8c47a" opacity="0.28"/>
+    <rect x="322" y="18" width="22" height="4"  rx="1" fill="#e8c47a" opacity="0.18"/>
+    <text x="53"  y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#e8c47a">0.05</text>
+    <text x="123" y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#e8c47a" font-weight="600">0.72</text>
+    <text x="193" y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#e8c47a">0.12</text>
+    <text x="263" y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#e8c47a">0.07</text>
+    <text x="333" y="84" text-anchor="middle" font-family="monospace" font-size="9" fill="#e8c47a">0.04</text>
+    <!-- Score node -->
+    <line x1="53"  y1="56" x2="168" y2="90" stroke="#e8c47a" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>
+    <line x1="123" y1="56" x2="198" y2="90" stroke="#e8c47a" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>
+    <line x1="193" y1="56" x2="215" y2="90" stroke="#e8c47a" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.5"/>
+    <line x1="263" y1="56" x2="230" y2="90" stroke="#e8c47a" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4"/>
+    <line x1="333" y1="56" x2="252" y2="90" stroke="#e8c47a" stroke-width="0.8" stroke-dasharray="3 3" opacity="0.4"/>
+    <rect x="150" y="90" width="140" height="34" rx="6" fill="#3d2e0f" stroke="#e8c47a" stroke-width="0.8"/>
+    <text x="220" y="111" text-anchor="middle" font-family="monospace" font-size="11" fill="#e8c47a">vᵀ tanh(W₁h + W₂s)</text>
+    <line x1="220" y1="124" x2="220" y2="144" stroke="#e8c47a" stroke-width="1" marker-end="url(#ag)"/>
+    <text x="245" y="138" font-family="sans-serif" font-size="10" fill="#e8c47a" opacity="0.7">softmax</text>
+    <!-- Context vector -->
+    <rect x="150" y="146" width="140" height="34" rx="6" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+    <text x="220" y="167" text-anchor="middle" font-family="monospace" font-size="12" fill="#c084fc">cₜ = Σ αᵢ · hᵢ</text>
+    <line x1="290" y1="163" x2="388" y2="163" stroke="#c084fc" stroke-width="1.2" marker-end="url(#ap)"/>
+    <text x="338" y="156" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#c084fc" opacity="0.7">context cₜ</text>
+    <!-- Decoder -->
+    <rect x="390" y="128" width="64" height="34" rx="5" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+    <text x="422" y="149" text-anchor="middle" font-family="monospace" font-size="11" fill="#c084fc">sₜ₋₁</text>
+    <path d="M 422 128 Q 422 108 288 108" fill="none" stroke="#c084fc" stroke-width="0.7" stroke-dasharray="3 3" opacity="0.5"/>
+    <rect x="476" y="128" width="82" height="76" rx="8" fill="#2d1a40" stroke="#c084fc" stroke-width="1"/>
+    <text x="517" y="155" text-anchor="middle" font-family="sans-serif" font-size="12" font-weight="600" fill="#c084fc">Decoder</text>
+    <text x="517" y="172" text-anchor="middle" font-family="monospace" font-size="11" fill="#c084fc">LSTM</text>
+    <text x="517" y="190" text-anchor="middle" font-family="monospace" font-size="10" fill="#c084fc">[yₜ₋₁ ; cₜ]</text>
+    <line x1="390" y1="163" x2="476" y2="175" stroke="#c084fc" stroke-width="0.8" stroke-dasharray="2 2" opacity="0.6"/>
+    <!-- h_t output and ŷt -->
+    <line x1="558" y1="166" x2="626" y2="166" stroke="#c084fc" stroke-width="1" marker-end="url(#ap)"/>
+    <rect x="628" y="148" width="48" height="34" rx="5" fill="#2d1a40" stroke="#c084fc" stroke-width="0.8"/>
+    <text x="652" y="169" text-anchor="middle" font-family="monospace" font-size="11" fill="#c084fc">sₜ</text>
+    <line x1="517" y1="204" x2="517" y2="220" stroke="#4a5568" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="481" y="222" width="72" height="28" rx="4" fill="#161b22" stroke="#30363d" stroke-width="0.5"/>
+    <text x="517" y="240" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#8b949e">yₜ₋₁  "chat"</text>
+    <line x1="652" y1="182" x2="652" y2="252" stroke="#7ee787" stroke-width="1" marker-end="url(#a0)"/>
+    <rect x="618" y="254" width="68" height="28" rx="4" fill="#122d1a" stroke="#7ee787" stroke-width="0.7"/>
+    <text x="652" y="272" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#7ee787">ŷₜ  "était"</text>
+    <!-- Callout -->
+    <rect x="28" y="260" width="290" height="28" rx="4" fill="#161b22" stroke="#e8c47a" stroke-width="0.4" stroke-dasharray="2 2"/>
+    <text x="173" y="278" text-anchor="middle" font-family="sans-serif" font-size="11" fill="#e8c47a">Decoding "chat": α_cat = 0.72 → cₜ ≈ h₂</text>
+  </svg>
+</section>
+
+<!-- SEC 03 ATTENTION MAPS -->
+<section class="section-slide"><span class="section-num">03</span><h2>Reading Attention Maps</h2><p style="color:var(--text-dim);font-size:0.58em;">What the model has learned to look at.</p></section>
+
+<section>
+  <h2>Attention map — EN → FR</h2>
+  <div style="font-size:0.72em;margin-bottom:0.3em;">
+    Cell <code>(row j, col i)</code> = attention weight <code>α_{t=j, i}</code>: how much the decoder attended to source token <em>i</em> when generating target token <em>j</em>.
+  </div>
+  <svg viewBox="0 0 560 282" style="width:86%;display:block;margin:0 auto;" xmlns="http://www.w3.org/2000/svg">
+    <text x="50"  y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">The</text>
+    <text x="110" y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">black</text>
+    <text x="170" y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">cat</text>
+    <text x="230" y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">sits</text>
+    <text x="290" y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">on</text>
+    <text x="350" y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">the</text>
+    <text x="410" y="14" text-anchor="middle" font-family="sans-serif" font-size="12" fill="#56c8ba">mat</text>
+    <text x="34" y="52"  text-anchor="end" font-family="sans-serif" font-size="12" fill="#c084fc">Le</text>
+    <text x="34" y="102" text-anchor="end" font-family="sans-serif" font-size="12" fill="#c084fc">chat</text>
+    <text x="34" y="152" text-anchor="end" font-family="sans-serif" font-size="12" fill="#c084fc">noir</text>
+    <text x="34" y="202" text-anchor="end" font-family="sans-serif" font-size="12" fill="#c084fc">est</text>
+    <text x="34" y="252" text-anchor="end" font-family="sans-serif" font-size="12" fill="#c084fc">assis</text>
+    <!-- Row Le: The=0.82 -->
+    <rect x="25"  y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.82"/><text x="50"  y="50" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">.82</text>
+    <rect x="85"  y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.08"/>
+    <rect x="145" y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+    <rect x="205" y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <rect x="265" y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <rect x="325" y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+    <rect x="385" y="26" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <!-- Row chat: cat=0.84 -->
+    <rect x="25"  y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+    <rect x="85"  y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.04"/>
+    <rect x="145" y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.84"/><text x="170" y="100" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">.84</text>
+    <rect x="205" y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.04"/>
+    <rect x="265" y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <rect x="325" y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <rect x="385" y="76" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <!-- Row noir: black=0.80 (adjective reordering) -->
+    <rect x="25"  y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.04"/>
+    <rect x="85"  y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.80"/><text x="110" y="150" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">.80</text>
+    <rect x="145" y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.10"/>
+    <rect x="205" y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <rect x="265" y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <rect x="325" y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <rect x="385" y="126" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.02"/>
+    <!-- Adjective reorder annotation -->
+    <rect x="438" y="126" width="110" height="40" rx="4" fill="#3d2e0f" stroke="#e8c47a" stroke-width="0.5"/>
+    <text x="493" y="143" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#e8c47a">adj. reorder:</text>
+    <text x="493" y="158" text-anchor="middle" font-family="sans-serif" font-size="10" fill="#e8c47a">"black cat"→"chat noir"</text>
+    <!-- Row est: sits=0.78 -->
+    <rect x="25"  y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <rect x="85"  y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+    <rect x="145" y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.06"/>
+    <rect x="205" y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.78"/><text x="230" y="200" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">.78</text>
+    <rect x="265" y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+    <rect x="325" y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <rect x="385" y="176" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <!-- Row assis: sits+on split -->
+    <rect x="25"  y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.03"/>
+    <rect x="85"  y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.04"/>
+    <rect x="145" y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+    <rect x="205" y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.40"/><text x="230" y="250" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">.40</text>
+    <rect x="265" y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.38"/><text x="290" y="250" text-anchor="middle" font-family="monospace" font-size="9" fill="#0d1117">.38</text>
+    <rect x="325" y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.06"/>
+    <rect x="385" y="226" width="50" height="40" rx="2" fill="#56c8ba" opacity="0.05"/>
+  </svg>
+  <div style="font-size:0.6em;color:var(--text-dim);text-align:center;margin-top:0.2em;">Diagonal = word-to-word alignment · Off-diagonal = reordering · This is what TP-06 produces.</div>
+</section>
+
+<section>
+  <h2>What attention maps reveal</h2>
+  <div style="font-size:0.78em;">
+    <div class="cols cols-3">
+      <div class="card mint">
+        <div class="card-title">Alignment learning</div>
+        Without any explicit word alignment supervision,
+        the model learns <em>cat → chat</em>, <em>mat → tapis</em>, <em>sits → est assis</em>.<br/><br/>
+        This emerges purely from the translation loss, backpropagated through the attention weights.
+      </div>
+      <div class="card gold">
+        <div class="card-title">Reordering</div>
+        EN: "black cat" (adj before noun)<br/>
+        FR: "chat noir" (adj after noun)<br/><br/>
+        The map shows: generating "chat" → attends to "cat" (pos 3), generating "noir" → attends to "black" (pos 2). The <em>off-diagonal</em> is the reordering signature.
+      </div>
+      <div class="card purple">
+        <div class="card-title">Interpretability</div>
+        Attention weights are the first form of interpretability in neural NLP.<br/><br/>
+        "Why did the model predict X? It attended most to token Y."<br/><br/>
+        <em>Caveat:</em> attention ≠ explanation. High weight ≠ causal importance (Jain &amp; Wallace 2019). But useful for debugging.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 04 FUNCTIONAL API -->
+<section class="section-slide"><span class="section-num">04</span><h2>Keras Functional API</h2><p style="color:var(--text-dim);font-size:0.58em;">Why Sequential fails. How to wire layers explicitly.</p></section>
+
+<section>
+  <h2>Why Sequential fails here</h2>
+  <div style="font-size:0.78em;">
+    <div class="hbox red" style="margin-bottom:0.55em;"><code>Sequential</code> assumes a single linear chain: one input → one output. Encoder-decoder with attention has <strong>multiple inputs, multiple outputs, shared intermediate tensors</strong>. Sequential cannot express this.</div>
+    <div class="cols cols-2">
+      <div class="card red" style="margin-bottom:0.5em;">
+        <div class="card-title">Things Sequential cannot do</div>
+        Encoder returns both all hidden states <em>and</em> the final state — two outputs.<br/><br/>
+        Attention layer takes <em>two</em> inputs: all encoder states + current decoder state.<br/><br/>
+        Decoder takes <em>three</em> inputs: previous token, context vector, previous hidden state.<br/><br/>
+        At inference, encoder and decoder must run separately.
+      </div>
+      <div class="card mint">
+        <div class="card-title">The Functional API pattern</div>
+        Call layers like functions. Wire outputs explicitly:
+        <pre style="margin:0.4em 0;"><code class="language-python">from tensorflow.keras import Model, Input
+from tensorflow.keras.layers import LSTM, Embedding
+
+enc_input = Input(shape=(None,))
+enc_emb   = Embedding(V, D)(enc_input)
+
+# return_sequences=True → all hidden states
+# return_state=True     → final (h, c)
+enc_out, h, c = LSTM(
+    units,
+    return_sequences=True,
+    return_state=True
+)(enc_emb)
+
+encoder = Model(
+    inputs=enc_input,
+    outputs=[enc_out, h, c]
+)</code></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Functional API — encoder-decoder sketch</h2>
+  <div style="font-size:0.72em;">
+    <div class="cols cols-2">
+      <div>
+<pre><code class="language-python"># ── ENCODER ──────────────────────────────
+enc_input = Input(shape=(None,), name="enc_in")
+enc_emb = Embedding(
+    src_vocab, EMB_DIM, mask_zero=True
+)(enc_input)
+
+enc_out, enc_h, enc_c = LSTM(
+    LSTM_UNITS,
+    return_sequences=True,  # all hᵢ
+    return_state=True,       # final h, c
+    name="encoder_lstm",
+)(enc_emb)
+# enc_out : (batch, src_len, units)
+# enc_h   : (batch, units)
+# enc_c   : (batch, units)
+
+# ── DECODER INPUT ─────────────────────────
+dec_input = Input(shape=(None,), name="dec_in")
+dec_emb = Embedding(
+    tgt_vocab, EMB_DIM, mask_zero=True
+)(dec_input)</code></pre>
+      </div>
+      <div>
+<pre><code class="language-python"># ── ATTENTION (custom layer, built in TP) ─
+# BahdanauAttention takes:
+#   all encoder states enc_out
+#   current decoder hidden state
+# Returns context vector cₜ + alpha weights
+attn = BahdanauAttention(LSTM_UNITS)
+
+# ── DECODER LSTM ──────────────────────────
+dec_lstm = LSTM(
+    LSTM_UNITS,
+    return_sequences=True,
+    return_state=True,
+)
+# Input at each step: [dec_emb ; cₜ]
+# Teacher forcing during training
+
+# ── OUTPUT PROJECTION ─────────────────────
+output = Dense(
+    tgt_vocab, activation="softmax"
+)(dec_hidden)
+
+model = Model(
+    inputs=[enc_input, dec_input],
+    outputs=output,
+)</code></pre>
+        <div class="hbox gold" style="margin-top:0.4em;font-size:0.9em;">
+          <strong>Key flags:</strong> <code>return_sequences=True</code> gives all hidden states (needed for attention). <code>return_state=True</code> also returns the final <code>(h, c)</code> pair. Both can be set simultaneously.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2>Teacher forcing</h2>
+  <div style="font-size:0.78em;">
+    <div class="hbox" style="margin-bottom:0.5em;"><strong>Problem during training:</strong> if step <em>t</em> produces a wrong token, step <em>t+1</em> receives a wrong input — and the error compounds across the whole sequence.</div>
+    <div class="cols cols-2">
+      <div>
+        <div class="card red">
+          <div class="card-title">Without teacher forcing</div>
+          Step 1: "Le" ✓<br/>
+          Step 2: input = model's "Le" → predicts <em>"chien"</em> (wrong)<br/>
+          Step 3: input = "chien" → everything downstream is off<br/><br/>
+          <span style="color:var(--red);">Error compounds. Training is slow and unstable.</span>
+        </div>
+      </div>
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">With teacher forcing</div>
+          Step 1: "Le" ✓<br/>
+          Step 2: input = <strong>ground-truth "Le"</strong> → predicts "chat" ✓<br/>
+          Step 3: input = <strong>ground-truth "chat"</strong> → predicts "noir" ✓<br/><br/>
+          <span style="color:var(--mint);">Clean gradient at every step. Fast and stable.</span>
+        </div>
+        <div class="hbox gold">In Keras: pass the shifted target as decoder input — one forward pass covers the whole sequence simultaneously.
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- SEC 05 LIMITS -->
+<section class="section-slide"><span class="section-num">05</span><h2>Limits and What's Next</h2><p style="color:var(--text-dim);font-size:0.58em;">Attention solved the bottleneck. A new one remains.</p></section>
+
+<section>
+  <h2>What attention didn't fix</h2>
+  <div style="font-size:0.78em;">
+    <div class="cols cols-2">
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">What Bahdanau attention solved</div>
+          Encoder bottleneck: decoder accesses all encoder states directly.<br/><br/>
+          Long-range dependencies across the source: no longer lost.<br/><br/>
+          Interpretability: attention maps as alignment for free.<br/><br/>
+          Translation quality on long sentences: large improvement.
+        </div>
+      </div>
+      <div>
+        <div class="card red" style="margin-bottom:0.5em;">
+          <div class="card-title">What it still didn't fix</div>
+          <strong>Still sequential:</strong> encoder processes tokens left-to-right. Decoder generates one token at a time. Training cannot be parallelised.<br/><br/>
+          <strong>Attention is cross-attention only:</strong> encoder tokens do not attend to each other. Within the encoder, information still flows only via LSTM.
+        </div>
+      </div>
+    </div>
+    <div class="hbox gold" style="margin-top:0.5em;"><strong>The next step (S07):</strong> apply attention <em>within</em> the encoder itself — every token attends to every other token simultaneously. No LSTM. No sequentiality. Full parallelism. This is <em>self-attention</em>, the foundation of the Transformer.</div>
+  </div>
+</section>
+
+<section>
+  <h2>The comparison table</h2>
+  <div style="font-size:0.72em;">
+    <table class="cmp-table">
+      <tr><th>Session</th><th>Model</th><th>Word order</th><th>Long-range</th><th>AG News F1</th><th>Key limit</th></tr>
+      <tr><td>S03</td><td>Naive Bayes</td><td class="bad">✗</td><td class="bad">✗</td><td class="good">~0.83</td><td>Feature independence</td></tr>
+      <tr><td>S03</td><td>Logistic Regression</td><td class="bad">✗</td><td class="bad">✗</td><td class="good">~0.89</td><td>No semantics</td></tr>
+      <tr><td>S04</td><td>GloVe mean pool + LR</td><td class="bad">✗</td><td class="bad">✗</td><td>~0.86</td><td>No word order</td></tr>
+      <tr><td>S05</td><td>LSTM</td><td class="good">✓</td><td>partial</td><td>← TP-05</td><td>Sequential, bottleneck</td></tr>
+      <tr class="highlight-row"><td>S06</td><td>LSTM + Bahdanau attention</td><td class="good">✓</td><td class="good">✓</td><td>← TP-06</td><td>Still sequential encoder</td></tr>
+      <tr style="opacity:0.45;"><td>S07</td><td>DistilBERT (fine-tuned)</td><td class="good">✓</td><td class="good">✓</td><td>TBD</td><td>Compute-heavy</td></tr>
+    </table>
+  </div>
+</section>
+
+<!-- TP BRIDGE -->
+<section>
+  <h2>TP-06 — what you will build</h2>
+  <div style="font-size:0.76em;">
+    <div class="cols cols-2">
+      <div>
+        <div class="card mint" style="margin-bottom:0.5em;">
+          <div class="card-title">Task: EN → FR translation</div>
+          Toy corpus: 200 sentence pairs, embedded in the notebook. No download.<br/>
+          Vocabulary ~200 words per language. Sentences 1–9 words.<br/><br/>
+          Adjective order differs EN→FR so attention maps show non-trivial reordering.
+        </div>
+        <div class="card gold">
+          <div class="card-title">You implement</div>
+          <code>build_vocab</code> · <code>encode_sentences</code><br/>
+          <code>build_encoder</code> (Functional API)<br/>
+          <code>BahdanauAttention</code> (custom Keras Layer)<br/>
+          <code>build_seq2seq_model</code> (teacher forcing)<br/>
+          <code>translate</code> (greedy decoding)<br/>
+          <code>plot_attention_map</code> (heatmap)<br/>
+          Bonus: beam search
+        </div>
+      </div>
+      <div>
+        <div class="card navy">
+          <div class="card-title">Expected output</div>
+          Training: ~3–5 min on CPU.<br/><br/>
+          Attention map for "the black cat sits on the mat" shows diagonal alignment + the adjective-reordering off-diagonal for "black"/"noir".<br/><br/>
+          This is the key interpretability result of the session.
+        </div>
+        <div style="text-align:center;margin-top:0.5em;">
+          <span class="pill pill-mint">Bahdanau</span>
+          <span class="pill pill-gold">teacher forcing</span>
+          <span class="pill pill-navy">Functional API</span>
+          <span class="pill pill-purple">attention map</span>
+          <span class="pill pill-mint">custom Layer</span>
+          <span class="pill pill-red">greedy decoding</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/reveal.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/highlight/highlight.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/reveal.js/4.6.1/plugin/notes/notes.min.js"></script>
+<script>
+  Reveal.initialize({hash:true,slideNumber:'c/t',progress:true,center:true,transition:'fade',transitionSpeed:'fast',width:1200,height:700,margin:0.06,minScale:0.1,plugins:[RevealHighlight,RevealNotes]});
+  Reveal.addEventListener('ready',function(){document.querySelectorAll('.reveal .slides section').forEach(function(s){s.style.zoom='1';});});
+</script>
+</body>
+</html>
