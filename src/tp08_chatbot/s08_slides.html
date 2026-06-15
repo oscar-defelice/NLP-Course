@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>S08 – IT Helpdesk Chatbot</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reset.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/theme/black.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/monokai.css"/>
+<style>
+  :root {
+    --c-bg:        #0d1117;
+    --c-surface:   #161b22;
+    --c-border:    #30363d;
+    --c-accent:    #58a6ff;
+    --c-accent2:   #3fb950;
+    --c-accent3:   #f78166;
+    --c-accent4:   #d2a8ff;
+    --c-warn:      #e3b341;
+    --c-text:      #e6edf3;
+    --c-muted:     #8b949e;
+    --c-heading:   #58a6ff;
+    --font-main:   'Inter', sans-serif;
+    --font-code:   'Fira Code', monospace;
+  }
+
+  .reveal-viewport { background: var(--c-bg); }
+  .reveal { font-family: var(--font-main); color: var(--c-text); font-size: 32px; }
+
+  .reveal h1, .reveal h2, .reveal h3 {
+    font-family: var(--font-main);
+    color: var(--c-heading);
+    text-transform: none;
+    letter-spacing: -0.02em;
+    margin-bottom: 0.5em;
+  }
+  .reveal h1 { font-size: 1.8em; font-weight: 700; }
+  .reveal h2 { font-size: 1.3em; font-weight: 600; }
+  .reveal h3 { font-size: 1.05em; font-weight: 600; color: var(--c-accent2); }
+
+  .reveal p, .reveal li { line-height: 1.5; }
+  .reveal ul { list-style: none; padding: 0; margin: 0; }
+  .reveal ul li::before { content: "▸ "; color: var(--c-accent); }
+  .reveal ul ul li::before { content: "· "; color: var(--c-muted); }
+
+  .reveal section { padding: 0 2em; box-sizing: border-box; }
+
+  /* cards */
+  .card {
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 10px;
+    padding: 0.6em 1em;
+    margin: 0.4em 0;
+  }
+  .card-accent  { border-left: 4px solid var(--c-accent); }
+  .card-green   { border-left: 4px solid var(--c-accent2); }
+  .card-red     { border-left: 4px solid var(--c-accent3); }
+  .card-purple  { border-left: 4px solid var(--c-accent4); }
+  .card-yellow  { border-left: 4px solid var(--c-warn); }
+
+  /* grid */
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 1em; align-items: start; }
+  .grid3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 0.8em; align-items: start; }
+
+  /* tags */
+  .tag {
+    display: inline-block;
+    background: var(--c-surface);
+    border: 1px solid var(--c-border);
+    border-radius: 4px;
+    padding: 0.1em 0.5em;
+    font-family: var(--font-code);
+    font-size: 0.72em;
+    color: var(--c-accent);
+    margin: 0.1em;
+  }
+  .tag-green  { color: var(--c-accent2); border-color: var(--c-accent2); }
+  .tag-red    { color: var(--c-accent3); border-color: var(--c-accent3); }
+  .tag-purple { color: var(--c-accent4); border-color: var(--c-accent4); }
+  .tag-yellow { color: var(--c-warn);    border-color: var(--c-warn); }
+
+  /* pipeline boxes */
+  .pipe-row {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 0.3em;
+    flex-wrap: wrap;
+    margin: 0.5em 0;
+  }
+  .pipe-box {
+    background: var(--c-surface);
+    border: 1px solid var(--c-accent);
+    border-radius: 8px;
+    padding: 0.4em 0.8em;
+    font-size: 0.78em;
+    text-align: center;
+    min-width: 90px;
+  }
+  .pipe-box.green  { border-color: var(--c-accent2); color: var(--c-accent2); }
+  .pipe-box.purple { border-color: var(--c-accent4); color: var(--c-accent4); }
+  .pipe-box.yellow { border-color: var(--c-warn);    color: var(--c-warn); }
+  .pipe-box.red    { border-color: var(--c-accent3); color: var(--c-accent3); }
+  .pipe-arrow { color: var(--c-muted); font-size: 1em; }
+
+  /* highlight spans */
+  .hl  { color: var(--c-accent); font-weight: 600; }
+  .hl2 { color: var(--c-accent2); font-weight: 600; }
+  .hl3 { color: var(--c-accent3); font-weight: 600; }
+  .hl4 { color: var(--c-accent4); font-weight: 600; }
+  .hlw { color: var(--c-warn); font-weight: 600; }
+
+  .muted { color: var(--c-muted); font-size: 0.8em; }
+  .small  { font-size: 0.78em; }
+  .xsmall { font-size: 0.68em; }
+
+  /* quote / example box */
+  .example-box {
+    background: #1c2128;
+    border: 1px solid var(--c-border);
+    border-radius: 8px;
+    padding: 0.6em 1em;
+    font-size: 0.78em;
+    font-family: var(--font-code);
+    text-align: left;
+    line-height: 1.6;
+  }
+  .ex-label {
+    font-family: var(--font-main);
+    font-size: 0.72em;
+    color: var(--c-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: 0.3em;
+  }
+
+  /* table */
+  .reveal table {
+    border-collapse: collapse;
+    width: 100%;
+    font-size: 0.75em;
+  }
+  .reveal table th {
+    background: var(--c-surface);
+    color: var(--c-accent);
+    border: 1px solid var(--c-border);
+    padding: 0.4em 0.7em;
+    text-align: left;
+  }
+  .reveal table td {
+    border: 1px solid var(--c-border);
+    padding: 0.35em 0.7em;
+  }
+  .reveal table tr:nth-child(even) td { background: #161b22; }
+
+  /* progress dot */
+  .session-dot {
+    display: inline-block;
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    background: var(--c-border);
+    margin: 0 3px;
+  }
+  .session-dot.done   { background: var(--c-accent2); }
+  .session-dot.active { background: var(--c-accent); box-shadow: 0 0 6px var(--c-accent); }
+</style>
+</head>
+<body>
+<div class="reveal">
+<div class="slides">
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 1 — TITLE
+══════════════════════════════════════════════ -->
+<section>
+  <div style="text-align:center; padding-top:1em;">
+    <div class="muted" style="font-size:0.7em; letter-spacing:0.12em; text-transform:uppercase; margin-bottom:0.5em;">NLP Engineering Course · Session 08</div>
+    <h1>Building an IT Helpdesk<br>Chatbot with RAG</h1>
+    <p style="color:var(--c-muted); font-size:0.8em; margin-top:0.5em;">
+      Retrieval-Augmented Generation · TF-IDF · Sentence Embeddings · Groq API · Gradio
+    </p>
+    <div style="margin-top:1.2em;">
+      <span class="session-dot done"></span>
+      <span class="session-dot done"></span>
+      <span class="session-dot done"></span>
+      <span class="session-dot done"></span>
+      <span class="session-dot done"></span>
+      <span class="session-dot done"></span>
+      <span class="session-dot done"></span>
+      <span class="session-dot active"></span>
+    </div>
+    <div class="muted" style="font-size:0.62em; margin-top:0.4em;">S01 · S02 · S03 · S04 · S05 · S06 · S07 · <span style="color:var(--c-accent)">S08</span></div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 2 — MOTIVATION
+══════════════════════════════════════════════ -->
+<section>
+  <h2>The Problem</h2>
+  <div class="card card-yellow" style="margin-bottom:0.7em;">
+    <p class="small">A company has <span class="hlw">thousands of resolved IT tickets</span>. Every day, users open new tickets for problems that have already been solved.</p>
+  </div>
+  <div class="grid2" style="margin-top:0.6em;">
+    <div>
+      <h3>Without a chatbot</h3>
+      <ul class="small">
+        <li>User faces an error</li>
+        <li>Opens a new ticket</li>
+        <li>Waits hours for a reply</li>
+        <li>Agent finds the same answer from last month</li>
+        <li>Cost: agent time + user frustration</li>
+      </ul>
+    </div>
+    <div>
+      <h3>With a chatbot</h3>
+      <ul class="small">
+        <li>User describes the error</li>
+        <li>System <span class="hl2">retrieves similar past tickets</span></li>
+        <li>LLM <span class="hl2">synthesises a clear answer</span></li>
+        <li>User resolves the issue in seconds</li>
+        <li>Ticket opened only if needed</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card card-accent" style="margin-top:0.8em;">
+    <p class="small">This is a <span class="hl">real production pattern</span> used by Notion, Intercom, Slack, and most large IT teams.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 3 — WHAT IS RAG?
+══════════════════════════════════════════════ -->
+<section>
+  <h2>What is RAG?</h2>
+  <p class="small" style="color:var(--c-muted); margin-bottom:0.6em;"><span class="hl">R</span>etrieval-<span class="hl">A</span>ugmented <span class="hl">G</span>eneration · Lewis et al., 2020</p>
+
+  <div class="card card-accent small" style="margin-bottom:0.8em;">
+    <b>Core idea:</b> instead of asking an LLM to memorise all knowledge at training time, give it <span class="hl">relevant documents at inference time</span> via a retrieval step.
+  </div>
+
+  <div class="pipe-row">
+    <div class="pipe-box">User<br>query</div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-box yellow">Retriever<br><span class="xsmall">search KB</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-box purple">Context<br><span class="xsmall">top-k docs</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-box green">LLM<br><span class="xsmall">generate</span></div>
+    <div class="pipe-arrow">→</div>
+    <div class="pipe-box red">Answer<br><span class="xsmall">+ sources</span></div>
+  </div>
+
+  <div class="grid2" style="margin-top:0.7em;">
+    <div class="card card-green small">
+      <b class="hl2">Why not just use the LLM directly?</b><br>
+      LLMs hallucinate, have a knowledge cutoff, and cannot access your private KB.
+    </div>
+    <div class="card card-purple small">
+      <b class="hl4">Why not just do keyword search?</b><br>
+      Search returns documents; RAG <em>synthesises</em> an answer grounded in those documents.
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 4 — THE TWO-PHASE ARCHITECTURE
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Two Phases: Offline vs Online</h2>
+  <div class="grid2">
+    <div>
+      <h3>Offline (indexing)</h3>
+      <div class="card card-yellow small">
+        Done <span class="hlw">once</span>, before the chatbot runs.
+      </div>
+      <div class="pipe-row" style="flex-direction:column; align-items:flex-start; gap:0.3em; margin-top:0.5em;">
+        <div class="pipe-box yellow" style="width:100%; text-align:left;">1. Load resolved tickets</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box yellow" style="width:100%; text-align:left;">2. Clean &amp; normalise text</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box yellow" style="width:100%; text-align:left;">3. Build index (TF-IDF or embeddings)</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box yellow" style="width:100%; text-align:left;">4. Store index on disk</div>
+      </div>
+    </div>
+    <div>
+      <h3>Online (query)</h3>
+      <div class="card card-accent small">
+        Runs <span class="hl">for every user message</span>.
+      </div>
+      <div class="pipe-row" style="flex-direction:column; align-items:flex-start; gap:0.3em; margin-top:0.5em;">
+        <div class="pipe-box" style="width:100%; text-align:left;">1. Receive user query</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box" style="width:100%; text-align:left;">2. Embed / vectorise query</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box" style="width:100%; text-align:left;">3. Retrieve top-k tickets</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box" style="width:100%; text-align:left;">4. Build prompt + call LLM</div>
+        <div class="pipe-arrow" style="margin-left:1em;">↓</div>
+        <div class="pipe-box" style="width:100%; text-align:left;">5. Return answer to user</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 5 — THE DATASET
+══════════════════════════════════════════════ -->
+<section>
+  <h2>The Dataset</h2>
+  <div class="card card-accent small" style="margin-bottom:0.7em;">
+    <b>Source:</b> <span class="hl">Tech Support Conversations Dataset</span> · Kaggle (<code>steve1215rogg/tech-support-conversations-dataset</code>)<br>
+    ~1 900 synthetic tech support interactions · 6 columns · English
+  </div>
+  <table>
+    <thead>
+      <tr><th>Column</th><th>Type</th><th>Example</th></tr>
+    </thead>
+    <tbody>
+      <tr><td><code>Conversation_ID</code></td><td>int</td><td>1</td></tr>
+      <tr><td><code>Customer_Issue</code></td><td>str</td><td>"My laptop won't connect to the WiFi even after restart."</td></tr>
+      <tr><td><code>Tech_Response</code></td><td>str</td><td>"Please forget the network, re-enter your password and restart the router."</td></tr>
+      <tr><td><code>Resolution_Time</code></td><td>int (min)</td><td>14</td></tr>
+      <tr><td><code>Issue_Category</code></td><td>str</td><td>Network</td></tr>
+      <tr><td><code>Issue_Status</code></td><td>str</td><td>Resolved / Pending / Escalated</td></tr>
+    </tbody>
+  </table>
+  <div class="card card-green small" style="margin-top:0.7em;">
+    <b class="hl2">First task:</b> filter to <code>Issue_Status == "Resolved"</code> only. Why? <span class="hl2">We only want proven solutions in our KB.</span>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 6 — RETRIEVER v1: TF-IDF
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Retriever v1: TF-IDF + Cosine Similarity</h2>
+  <div class="grid2">
+    <div>
+      <h3>How it works</h3>
+      <ul class="small">
+        <li>Represent each ticket as a <span class="hl">sparse vector</span> of TF-IDF weights</li>
+        <li>At query time, vectorise the query with the <em>same</em> fitted vectoriser</li>
+        <li>Rank tickets by <span class="hl">cosine similarity</span> to the query</li>
+        <li>Return top-k</li>
+      </ul>
+      <div class="card card-yellow small" style="margin-top:0.5em;">
+        <b class="hlw">Limitation:</b> vocabulary mismatch.<br>
+        "WiFi won't work" ≠ "network connectivity issue" -- zero overlap in TF-IDF space.
+      </div>
+    </div>
+    <div>
+      <h3>Worked example</h3>
+      <div class="example-box">
+        <div class="ex-label">Query</div>
+        <span style="color:var(--c-accent);">"printer not responding after update"</span>
+        <br><br>
+        <div class="ex-label">Top-3 retrieved</div>
+        <span style="color:var(--c-accent2);">① 0.81</span> "printer stops working after driver update..."<br>
+        <span style="color:var(--c-accent2);">② 0.63</span> "device not responding, tried updating..."<br>
+        <span style="color:var(--c-accent2);">③ 0.44</span> "software update caused printer queue to freeze..."
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 7 — RETRIEVER v2: SENTENCE EMBEDDINGS
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Retriever v2: Sentence Embeddings</h2>
+  <div class="card card-accent small" style="margin-bottom:0.6em;">
+    Model: <code>all-MiniLM-L6-v2</code> (sentence-transformers) · 384-dim dense vectors · 80 MB · CPU-friendly
+  </div>
+  <div class="grid2">
+    <div>
+      <h3>What changes?</h3>
+      <ul class="small">
+        <li>Each text → a <span class="hl4">dense 384-dim vector</span> encoding <em>meaning</em></li>
+        <li>Semantically similar sentences are <span class="hl4">close in vector space</span></li>
+        <li>Retrieval still uses cosine similarity</li>
+        <li>Index is now a matrix <code>(n_tickets, 384)</code></li>
+      </ul>
+    </div>
+    <div>
+      <h3>Same example</h3>
+      <div class="example-box">
+        <div class="ex-label">Query</div>
+        <span style="color:var(--c-accent);">"my printer stopped after the update"</span>
+        <br><br>
+        <div class="ex-label">Top match (TF-IDF missed it)</div>
+        <span style="color:var(--c-accent4);">① 0.89</span> "after installing the latest OS patch, the HP LaserJet became unresponsive"<br>
+        <span class="muted">(zero lexical overlap with query!)</span>
+      </div>
+    </div>
+  </div>
+  <div class="card card-green small" style="margin-top:0.6em;">
+    <b class="hl2">Key insight:</b> embeddings capture <em>semantic</em> similarity; TF-IDF captures <em>lexical</em> overlap. In production, both are often combined (hybrid search).
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 8 — PROMPT ENGINEERING FOR RAG
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Prompt Engineering for RAG</h2>
+  <p class="small" style="color:var(--c-muted);">The retrieved tickets go into the prompt as grounding context.</p>
+  <div class="example-box small" style="margin-top:0.5em;">
+    <span style="color:var(--c-accent4);">SYSTEM:</span> <span style="color:var(--c-text);">You are an IT support assistant. Answer the user's question using ONLY the context below. If the context does not contain enough information, say so and suggest opening a ticket.</span><br><br>
+    <span style="color:var(--c-warn);">CONTEXT (resolved tickets):</span><br>
+    <span style="color:var(--c-muted);">--- Ticket 1 (Network) ---</span><br>
+    Issue: My laptop won't connect to WiFi after a Windows update.<br>
+    Solution: Rollback the network driver via Device Manager > Network Adapters > right-click > Update Driver > Browse > Let me pick.<br><br>
+    <span style="color:var(--c-muted);">--- Ticket 2 (Network) ---</span><br>
+    Issue: WiFi keeps dropping every few minutes.<br>
+    Solution: Disable power saving for the adapter in Advanced Settings.<br><br>
+    <span style="color:var(--c-accent2);">USER:</span> <span style="color:var(--c-text);">My WiFi stopped working after I updated Windows yesterday.</span>
+  </div>
+  <div class="card card-red xsmall" style="margin-top:0.6em;">
+    <b class="hl3">Design choices:</b> tell the model to stay grounded · instruct it to admit uncertainty · always include the source ticket category
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 9 — CLAUDE API
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Calling the Groq API</h2>
+  <div class="card card-accent small" style="margin-bottom:0.6em;">
+    We use <span class="hl">llama-3.3-70b-versatile</span> via <span class="hl2">Groq</span> · free tier · 30 req/min · no credit card required
+  </div>
+  <div class="grid2">
+    <div>
+      <h3>SDK pattern</h3>
+      <pre style="font-size:0.55em; background:var(--c-surface); border:1px solid var(--c-border); border-radius:8px; padding:0.8em; text-align:left; line-height:1.5;"><code class="language-python">from openai import OpenAI
+
+client = OpenAI(
+    api_key=api_key,
+    base_url="https://api.groq.com/openai/v1",
+)
+
+response = client.chat.completions.create(
+    model="llama-3.3-70b-versatile",
+    max_tokens=512,
+    messages=[
+        {"role": "system", "content": system_prompt},
+        {"role": "user",   "content": user_prompt},
+    ],
+)
+
+answer = response.choices[0].message.content</code></pre>
+    </div>
+    <div>
+      <h3>Get your free API key</h3>
+      <ul class="small">
+        <li>Go to <code>console.groq.com</code></li>
+        <li>Sign in with Google or GitHub</li>
+        <li>Go to <b>API Keys</b> → <b>Create API key</b></li>
+        <li>Copy the key (starts with <code>gsk_...</code>)</li>
+      </ul>
+      <div class="card card-yellow small" style="margin-top:0.5em;">
+        <b class="hlw">In Colab:</b> 🔑 Secrets panel → add <code>GROQ_API_KEY</code> → toggle Notebook access ON.
+      </div>
+      <div class="card card-green small" style="margin-top:0.4em;">
+        <b class="hl2">Cost: $0</b> for the entire session.
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 10 — CHATBOT CLASS DESIGN
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Chatbot Class Design</h2>
+  <div class="card card-accent small" style="margin-bottom:0.6em;">
+    One class, <span class="hl">clean interface</span>: swap the retriever without touching the rest.
+  </div>
+  <pre style="font-size:0.52em; background:var(--c-surface); border:1px solid var(--c-border); border-radius:8px; padding:0.8em; text-align:left; line-height:1.6;"><code class="language-python">class HelpDeskChatBot:
+    """IT helpdesk chatbot using retrieval-augmented generation.
+
+    Parameters
+    ----------
+    tickets : pd.DataFrame
+        Resolved tickets with columns Customer_Issue, Tech_Response, Issue_Category.
+    retriever : BaseRetriever
+        A fitted retriever exposing .retrieve(query, k) -> List[dict].
+    api_key : str
+        Groq API key.
+    k : int, optional
+        Number of tickets to retrieve per query. Default 3.
+    """
+    def __init__(self, tickets, retriever, api_key, k=3): ...
+
+    def answer(self, query: str) -> dict:
+        """Return answer dict with keys: response, sources, retriever_scores."""
+        ...</code></pre>
+  <div class="grid2" style="margin-top:0.5em;">
+    <div class="card card-green small"><b class="hl2">answer()</b> returns a dict so the Gradio UI can show both the answer and the source tickets side by side.</div>
+    <div class="card card-purple small"><b class="hl4">retriever</b> is injected -- pass a TfidfRetriever or EmbeddingRetriever transparently.</div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 11 — GRADIO IN 10 LINES
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Gradio: Deploy in 10 Lines</h2>
+  <div class="card card-accent small" style="margin-bottom:0.6em;">
+    Gradio wraps any Python function into a web UI. <span class="hl">No HTML, no JavaScript.</span>
+  </div>
+  <pre style="font-size:0.55em; background:var(--c-surface); border:1px solid var(--c-border); border-radius:8px; padding:0.8em; text-align:left; line-height:1.6;"><code class="language-python">import gradio as gr
+
+def chat_fn(user_message, history):
+    result = bot.answer(user_message)
+    sources = "\n".join(
+        f"[{s['category']}] {s['issue'][:80]}…"
+        for s in result["sources"]
+    )
+    return result["response"] + f"\n\n---\n📎 Sources:\n{sources}"
+
+demo = gr.ChatInterface(
+    fn=chat_fn,
+    title="IT Helpdesk Assistant",
+    description="Describe your issue and I'll search our resolved tickets.",
+)
+demo.launch()</code></pre>
+  <div class="card card-green small" style="margin-top:0.5em;">
+    Running in Colab: <code>demo.launch(share=True)</code> gives a <span class="hl2">public URL valid for 72h</span> -- no account needed.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 12 — EVALUATION: HOW DO WE KNOW IT WORKS?
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Evaluation</h2>
+  <p class="small" style="color:var(--c-muted);">RAG systems are harder to evaluate than classifiers -- there is no single ground-truth label.</p>
+  <div class="grid3" style="margin-top:0.5em;">
+    <div class="card card-yellow small">
+      <b class="hlw">Retrieval quality</b><br><br>
+      For a given query, does the correct ticket appear in top-k?<br><br>
+      Metric: <span class="hlw">Recall@k</span>
+    </div>
+    <div class="card card-accent small">
+      <b class="hl">Answer quality</b><br><br>
+      Is the LLM answer grounded in the retrieved context?<br><br>
+      Metric: <span class="hl">faithfulness</span> (manual or LLM-as-judge)
+    </div>
+    <div class="card card-green small">
+      <b class="hl2">End-to-end</b><br><br>
+      Did the user get a useful answer without opening a ticket?<br><br>
+      Metric: <span class="hl2">deflection rate</span> (production KPI)
+    </div>
+  </div>
+  <div class="card card-red small" style="margin-top:0.7em;">
+    <b class="hl3">In the TP:</b> compare TF-IDF vs embedding retriever on 10 hand-crafted test queries. For each, check whether the <em>most relevant</em> ticket is in top-3.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 13 — FULL SYSTEM DIAGRAM
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Full System at a Glance</h2>
+  <div style="display:flex; flex-direction:column; gap:0.4em; margin-top:0.3em;">
+
+    <div style="display:flex; align-items:center; gap:0.5em;">
+      <div class="tag tag-yellow" style="min-width:90px; text-align:center;">OFFLINE</div>
+      <div class="pipe-box yellow" style="flex:1; text-align:left; font-size:0.7em;">
+        Load CSV → filter Resolved → build TF-IDF matrix → encode with MiniLM → save index
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:0.5em;">
+      <div class="tag" style="min-width:90px; text-align:center;">ONLINE</div>
+      <div class="pipe-row" style="flex:1; justify-content:flex-start; gap:0.3em;">
+        <div class="pipe-box" style="font-size:0.65em;">User<br>types query</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box yellow" style="font-size:0.65em;">Retriever<br>top-3 tickets</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box purple" style="font-size:0.65em;">Prompt<br>builder</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box green" style="font-size:0.65em;">Groq<br>Llama</div>
+        <div class="pipe-arrow">→</div>
+        <div class="pipe-box red" style="font-size:0.65em;">Answer<br>+ sources</div>
+      </div>
+    </div>
+
+    <div style="display:flex; align-items:center; gap:0.5em;">
+      <div class="tag tag-green" style="min-width:90px; text-align:center;">UI</div>
+      <div class="pipe-box green" style="flex:1; text-align:left; font-size:0.7em;">
+        Gradio ChatInterface · chat history · source tickets displayed below answer
+      </div>
+    </div>
+
+  </div>
+  <div class="card card-accent small" style="margin-top:0.8em;">
+    <b>Your deliverable today:</b> a <span class="hl">working chatbot</span> you can demo live with any IT question.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 14 — AG NEWS FINAL SCOREBOARD
+══════════════════════════════════════════════ -->
+<section>
+  <h2>AG News — Final Scoreboard</h2>
+  <table style="font-size:0.68em; margin-top:0.3em;">
+    <thead>
+      <tr>
+        <th>Session</th><th>Model</th><th>Features</th><th>Macro F1</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr><td>S02</td><td>Naive Bayes</td><td>Count n-grams</td><td>0.83</td></tr>
+      <tr><td>S03</td><td>Logistic Regression</td><td>TF-IDF unigrams</td><td>0.88</td></tr>
+      <tr><td>S04</td><td>Logistic Regression</td><td>TF-IDF + bigrams + char-ngrams</td><td>0.90</td></tr>
+      <tr><td>S05</td><td>Word2Vec + MLP</td><td>Avg. word embeddings</td><td>0.91</td></tr>
+      <tr><td>S06</td><td>LSTM</td><td>Trainable embeddings</td><td>0.92</td></tr>
+      <tr><td>S07</td><td>Transformer encoder</td><td>Positional enc. + MHA</td><td>0.93–0.94</td></tr>
+      <tr style="background:#1c2128;"><td><b>S07 (fine-tune)</b></td><td><b>DistilBERT</b></td><td><b>Pre-trained + fine-tune</b></td><td style="color:var(--c-accent2);"><b>0.94–0.95</b></td></tr>
+    </tbody>
+  </table>
+  <div class="card card-green small" style="margin-top:0.7em;">
+    The jump from hand-crafted features (0.83) to fine-tuned transformers (0.95) is the story of the last decade of NLP.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 15 — TP ROADMAP
+══════════════════════════════════════════════ -->
+<section>
+  <h2>Today's TP — Three Parts</h2>
+  <div class="grid3">
+    <div class="card card-yellow">
+      <h3 style="color:var(--c-warn);">Part 1</h3>
+      <ul class="small">
+        <li>Install deps &amp; configure API key</li>
+        <li>Download dataset (kagglehub)</li>
+        <li>EDA: categories, status distribution</li>
+        <li>Build TF-IDF index</li>
+        <li>Test retrieval with 5 queries</li>
+      </ul>
+    </div>
+    <div class="card card-accent">
+      <h3>Part 2</h3>
+      <ul class="small">
+        <li>Build embedding index (MiniLM)</li>
+        <li>Compare TF-IDF vs embeddings</li>
+        <li>Write prompt builder</li>
+        <li>Call Groq API</li>
+        <li>Assemble <code>HelpDeskChatBot</code></li>
+      </ul>
+    </div>
+    <div class="card card-green">
+      <h3 style="color:var(--c-accent2);">Part 3</h3>
+      <ul class="small">
+        <li>Wrap bot in Gradio ChatInterface</li>
+        <li>Add source ticket display</li>
+        <li>Launch &amp; share public URL</li>
+        <li>(Bonus) history-aware follow-up</li>
+      </ul>
+    </div>
+  </div>
+  <div class="card card-accent small" style="margin-top:0.8em;">
+    <b>Reminder:</b> every function must have a <span class="hl">numpy-style docstring</span>. Code must be <span class="hl">modular</span> -- one function, one responsibility.
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════════
+     SLIDE 16 — GO!
+══════════════════════════════════════════════ -->
+<section>
+  <div style="text-align:center; padding-top:1.5em;">
+    <h1 style="font-size:2.2em;">Open your notebook.</h1>
+    <p style="color:var(--c-muted); margin-top:0.5em;">Read the dataset description carefully.<br>Ask questions. Build something real.</p>
+    <div style="margin-top:1.5em; display:flex; justify-content:center; gap:1em; flex-wrap:wrap;">
+      <div class="tag tag-yellow" style="font-size:0.9em; padding:0.3em 0.9em;">Part 1 · 09:40 → 10:00 + 10:15 → 11:15</div>
+      <div class="tag" style="font-size:0.9em; padding:0.3em 0.9em;">Part 2 · 11:15 → 12:00</div>
+      <div class="tag tag-green" style="font-size:0.9em; padding:0.3em 0.9em;">Part 3 · 12:15 → 12:45</div>
+    </div>
+    <p style="margin-top:1.5em; color:var(--c-accent); font-size:0.9em;">
+      Bon courage 🚀
+    </p>
+  </div>
+</section>
+
+</div><!-- .slides -->
+</div><!-- .reveal -->
+
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/dist/reveal.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/highlight/highlight.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/reveal.js@4.6.1/plugin/notes/notes.js"></script>
+<script>
+  Reveal.initialize({
+    hash: true,
+    slideNumber: 'c/t',
+    transition: 'fade',
+    transitionSpeed: 'fast',
+    minScale: 0.1,
+    maxScale: 2.0,
+    plugins: [ RevealHighlight, RevealNotes ]
+  });
+
+  Reveal.on('ready', function() {
+    var slides = document.querySelectorAll('.reveal .slides section');
+    slides.forEach(function(slide) {
+      var sh = slide.scrollHeight;
+      var vh = Reveal.getConfig().height || 700;
+      if (sh > vh * 1.05) {
+        var z = Math.min(1, vh / sh);
+        slide.style.zoom = z.toFixed(3);
+      }
+    });
+  });
+</script>
+</body>
+</html>
